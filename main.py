@@ -2,10 +2,11 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 from enum import Enum
 from typing import Annotated, List
+from datetime import datetime
 import models
 import Job
 import BusinessOwner
-import subscription
+import Subscription
 import Worker
 from database import engine, Sessionlocal
 from sqlalchemy.orm import Session
@@ -15,7 +16,7 @@ app = FastAPI()
 models.Base.metadata.create_all(bind = engine)
 Job.Base.metadata.create_all(bind = engine)
 BusinessOwner.Base.metadata.create_all(bind = engine)
-subscription.Base.metadata.create_all(bind = engine)
+Subscription.Base.metadata.create_all(bind = engine)
 Worker.Base.metadata.create_all(bind = engine)
 
 
@@ -58,6 +59,12 @@ class WorkerBase(BaseModel):
     city: str
     skills: str
 
+class SubscriptionBase(BaseModel):
+    id: int
+    clientId: int
+    start: datetime
+    end: datetime
+
 def get_db():
     db = Sessionlocal()
     try: 
@@ -76,7 +83,7 @@ async def read_job(job_id: int, db: db_dependency):
     return job
 
 @app.get("/job", status_code=status.HTTP_200_OK)
-async def read_job(db: db_dependency):
+async def read_joball(db: db_dependency):
     job = db.query(Job.Job)
     if job is None:
         HTTPException(status_code=404, detail='Job was not found')
@@ -95,6 +102,19 @@ async def read_owner(owner_id: int, db:db_dependency):
     if owner is None:
         HTTPException(status_code=404, detail='Owner was not found')
     return owner
+
+@app.post("/subscription/", status_code=status.HTTP_201_CREATED)
+async def create_subscription(subscription: SubscriptionBase, db: db_dependency):
+    db_subscritption = Subscription.Subscription(**subscription.dict())
+    db.add(db_subscritption)
+    db.commit()
+
+@app.get("/subscription/{subscription_id}", status_code=status.HTTP_200_OK)
+async def read_subscription(subscription_id: int, db:db_dependency):
+    subscription = db.query(Subscription.Subscription).filter(Subscription.Subscription.id == subscription_id).first()
+    if subscription is None:
+        HTTPException(status_code=404, detail='Subscription was not found')
+    return subscription
 
 @app.post("/owner/", status_code=status.HTTP_201_CREATED)
 async def create_owner(owner: BusinessOwnerBase , db: db_dependency):
@@ -155,7 +175,7 @@ async def read_user(user_Id: int, db: db_dependency):
     return user
 
 @app.delete("/users/{user_Id}", status_code= status.HTTP_200_OK)
-async def delete_post(user_Id: int, db: db_dependency):
+async def delete_user(user_Id: int, db: db_dependency):
     db_user = db.query(models.User).filter(models.User.id == user_Id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail='User was not found')

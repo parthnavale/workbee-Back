@@ -14,7 +14,7 @@ class Worker(Base):
 
         #id proof
         id = Column(Integer, primary_key= True, index=True)
-        descrption = Column(String(500), nullable=False)
+        description = Column(String(500), nullable=False)
         name = Column(String(100),nullable=False)
         state = Column(String(100), nullable=False)
         city = Column(String(100), nullable=False)

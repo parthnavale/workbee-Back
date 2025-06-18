@@ -9,8 +9,8 @@ class Job(Base):
         #manually create it 
         id = Column(Integer, primary_key= True, index=True)
         description = Column(String(400),nullable=False)
-        businessRegistrationNumber = Column(Integer)
-        #businessRegistrationNumber = Column(Integer, ForeignKey("owner.id"), nullable=False)
+        #businessRegistrationNumber = Column(Integer)
+        businessRegistrationNumber = Column(Integer, ForeignKey("owner.id"), nullable=False)
         #add enum in frontend
         role = Column(String(100),nullable=False)
         # add enumber for the below in flutter front end 
