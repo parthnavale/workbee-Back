@@ -1,0 +1,164 @@
+
+Register User (Business Owner)
+Status: 200
+{
+  "id": 1,
+  "username": "owner1",
+  "email": "owner1@example.com",
+  "role": "poster"
+}
+
+Register User (Worker)
+Status: 200
+{
+  "id": 2,
+  "username": "worker1",
+  "email": "worker1@example.com",
+  "role": "seeker"
+}
+
+Create Business Owner
+Status: 200
+{
+  "user_id": 1,
+  "business_name": "Acme Corp",
+  "contact_person": "Alice",
+  "contact_phone": "1234567890",
+  "contact_email": "alice@acme.com",
+  "address": "123 Main St",
+  "website": "https://acme.com",
+  "industry": "Retail",
+  "state": "CA",
+  "city": "San Francisco",
+  "pincode": "94105",
+  "year_established": 2010,
+  "id": 1
+}
+
+Create Worker
+Status: 200
+{
+  "user_id": 2,
+  "name": "Bob",
+  "phone": "9876543210",
+  "email": "bob@example.com",
+  "skills": "Cashier,Inventory",
+  "years_of_experience": 3,
+  "address": "456 Park Ave",
+  "state": "CA",
+  "city": "San Francisco",
+  "pincode": "94107",
+  "id": 1
+}
+
+Create Job
+Status: 200
+{
+  "business_owner_id": 1,
+  "title": "Cashier Needed",
+  "description": "Looking for a cashier...",
+  "required_skills": "Cashier,POS",
+  "location": "San Francisco",
+  "address": "123 Main St",
+  "state": "CA",
+  "city": "San Francisco",
+  "pincode": "94105",
+  "hourly_rate": 20.5,
+  "estimated_hours": 40,
+  "start_date": "2024-07-01T09:00:00",
+  "contact_person": "Alice",
+  "contact_phone": "1234567890",
+  "contact_email": "alice@acme.com",
+  "id": 1,
+  "posted_date": "2025-06-30T13:57:59",
+  "status": "open"
+}
+
+Apply for Job
+Status: 200
+{
+  "job_id": 1,
+  "worker_id": 1,
+  "message": "I am interested in this job.",
+  "id": 1,
+  "status": "pending",
+  "applied_date": "2025-06-30T13:57:59",
+  "responded_date": null
+}
+
+Get All Jobs
+Status: 200
+[
+  {
+    "business_owner_id": 1,
+    "title": "Cashier Needed",
+    "description": "Looking for a cashier...",
+    "required_skills": "Cashier,POS",
+    "location": "San Francisco",
+    "address": "123 Main St",
+    "state": "CA",
+    "city": "San Francisco",
+    "pincode": "94105",
+    "hourly_rate": 20.5,
+    "estimated_hours": 40,
+    "start_date": "2024-07-01T09:00:00",
+    "contact_person": "Alice",
+    "contact_phone": "1234567890",
+    "contact_email": "alice@acme.com",
+    "id": 1,
+    "posted_date": "2025-06-30T13:57:59",
+    "status": "open"
+  }
+]
+
+Get Applications for Job
+Status: 200
+[
+  {
+    "job_id": 1,
+    "worker_id": 1,
+    "message": "I am interested in this job.",
+    "id": 1,
+    "status": "pending",
+    "applied_date": "2025-06-30T13:57:59",
+    "responded_date": null
+  }
+]
+
+Get All Workers
+Status: 200
+[
+  {
+    "user_id": 2,
+    "name": "Bob",
+    "phone": "9876543210",
+    "email": "bob@example.com",
+    "skills": "Cashier,Inventory",
+    "years_of_experience": 3,
+    "address": "456 Park Ave",
+    "state": "CA",
+    "city": "San Francisco",
+    "pincode": "94107",
+    "id": 1
+  }
+]
+
+Get All Business Owners
+Status: 200
+[
+  {
+    "user_id": 1,
+    "business_name": "Acme Corp",
+    "contact_person": "Alice",
+    "contact_phone": "1234567890",
+    "contact_email": "alice@acme.com",
+    "address": "123 Main St",
+    "website": "https://acme.com",
+    "industry": "Retail",
+    "state": "CA",
+    "city": "San Francisco",
+    "pincode": "94105",
+    "year_established": 2010,
+    "id": 1
+  }
+]
