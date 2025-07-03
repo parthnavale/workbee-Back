@@ -61,6 +61,13 @@ jobs:
           source venv/bin/activate
           pytest workbee-Back/test/ || echo "No tests found or tests failed"
 
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
+
       - name: Deploy to GCP VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
