@@ -14,6 +14,8 @@ class BusinessOwnerCreate(BaseModel):
     city: Optional[str] = None
     pincode: Optional[str] = None
     year_established: Optional[int] = None
+    class Config:
+        extra = "ignore"
 
 class BusinessOwnerResponse(BusinessOwnerCreate):
     id: int

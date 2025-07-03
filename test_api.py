@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://34.41.68.175:8000"
 
 # Helper to print test results
 def print_result(name, resp):

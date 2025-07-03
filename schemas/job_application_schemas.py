@@ -6,6 +6,8 @@ class JobApplicationCreate(BaseModel):
     job_id: int
     worker_id: int
     message: Optional[str] = None
+    class Config:
+        extra = "ignore"
 
 class JobApplicationResponse(JobApplicationCreate):
     id: int

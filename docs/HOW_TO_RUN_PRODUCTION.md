@@ -65,6 +65,41 @@ server {
 - Monitor Gunicorn and process manager logs.
 - Set up alerts for errors and downtime.
 
+## Database Migrations with Alembic
+
+For production, use Alembic to manage database schema changes instead of Base.metadata.create_all.
+
+### 1. Install Alembic
+```bash
+pip install alembic
+```
+
+### 2. Initialize Alembic in your project root
+```bash
+alembic init alembic
+```
+
+### 3. Configure Alembic
+- Edit `alembic.ini` and set `sqlalchemy.url` to your WORKBEE_DATABASE_URL or use env var substitution.
+- In `alembic/env.py`, import your models:
+  ```python
+  from models.user import User
+  from models.business_owner import BusinessOwner
+  from models.worker import Worker
+  from models.job import Job
+  from models.job_application import JobApplication
+  from core.database import Base
+  target_metadata = Base.metadata
+  ```
+
+### 4. Create and Apply Migrations
+```bash
+alembic revision --autogenerate -m "Initial migration"
+alembic upgrade head
+```
+
+- Repeat for future schema changes.
+
 ---
 
 For more, see the [FastAPI deployment docs](https://fastapi.tiangolo.com/deployment/). 

@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from schemas.user_schemas import UserCreate, UserLogin, UserResponse
@@ -9,7 +10,8 @@ from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-SECRET_KEY = "workbee_secret"
+# Load the JWT secret from environment variable
+SECRET_KEY = os.environ.get("WORKBEE_SECRET_KEY", "workbee_secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

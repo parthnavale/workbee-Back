@@ -18,6 +18,8 @@ class JobCreate(BaseModel):
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
+    class Config:
+        extra = "ignore"
 
 class JobResponse(JobCreate):
     id: int

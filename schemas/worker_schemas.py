@@ -12,6 +12,8 @@ class WorkerCreate(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     pincode: Optional[str] = None
+    class Config:
+        extra = "ignore"
 
 class WorkerResponse(WorkerCreate):
     id: int
