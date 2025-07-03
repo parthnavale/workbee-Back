@@ -335,15 +335,15 @@ This document describes the REST API endpoints, request/response schemas, and ex
 The backend is now configured to use **MySQL** by default.
 
 - The connection string is set in `workbee-Back/core/database.py`:
-  ```python
+```python
   SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:Parth%402000@localhost:3306/workbee_db"
-  ```
+```
 - If your MySQL password contains special characters (like `@`), encode them (e.g., `@` becomes `%40`).
 - Make sure the database `workbee_db` exists and your MySQL server is running.
 - Install the MySQL connector:
-  ```bash
+```bash
   pip install mysql-connector-python
-  ```
+```
 
 You can change the connection string to match your own MySQL credentials and host as needed.
 
