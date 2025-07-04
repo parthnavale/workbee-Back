@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 # Load the database URL from environment variable
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "WORKBEE_DATABASE_URL",
-    "mysql+mysqlconnector://root:Parth%402000@localhost:3306/workbee_db"
+    "mysql+mysqlconnector://workbee_user:Workbee%402000@localhost:3306/workbee_db"
 )
 
 engine = create_engine(
