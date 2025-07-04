@@ -1,0 +1,142 @@
+# Google Cloud Run Deployment Guide for FastAPI Backend (with HTTPS & CI/CD)
+
+This guide will help you deploy your FastAPI backend to Google Cloud Run with automatic HTTPS and CI/CD using GitHub Actions.
+
+---
+
+## 1. Prepare Your FastAPI Project
+
+- Ensure your FastAPI app entry point is `main.py` and the app instance is named `app`.
+- Your project should have a `requirements.txt` file listing all dependencies.
+
+---
+
+## 2. Add a Dockerfile
+
+Create a file named `Dockerfile` in your project root with the following content:
+
+```
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8080
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+```
+> Note: Cloud Run expects your app to listen on port 8080.
+
+---
+
+## 3. Push Your Code to GitHub
+
+- Make sure your code (with the Dockerfile) is in a GitHub repository.
+
+---
+
+## 4. Set Up Google Cloud Project & Enable Cloud Run
+
+1. Go to https://console.cloud.google.com/
+2. Create a new project (or use an existing one).
+3. Enable the **Cloud Run** and **Artifact Registry** APIs:
+   - In the console, search for "Cloud Run" and "Artifact Registry" and click "Enable" for both.
+
+---
+
+## 5. Create a Service Account for GitHub Actions
+
+1. In GCP Console, go to **IAM & Admin → Service Accounts**.
+2. Click **Create Service Account** (e.g., `github-cloudrun-deployer`).
+3. Grant these roles:
+   - Cloud Run Admin
+   - Artifact Registry Writer
+   - Service Account User
+4. Click **Create Key** → **JSON**. Download and save the key file.
+
+---
+
+## 6. Add GitHub Secrets
+
+In your GitHub repo, go to **Settings → Secrets and variables → Actions** and add:
+- `GCP_PROJECT_ID` — your GCP project ID
+- `GCP_SA_KEY` — the contents of the JSON key file you downloaded (open in a text editor and copy all contents)
+
+---
+
+## 7. Add GitHub Actions Workflow
+
+Create a file: `.github/workflows/deploy.yml` in your repo with the following content:
+
+```
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker
+
+    - name: Build and push Docker image
+      run: |
+        IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workbee-repo/workbee-backend:${{ github.sha }}"
+        gcloud artifacts repositories create workbee-repo --repository-format=docker --location=us-central1 || true
+        docker build -t $IMAGE .
+        docker push $IMAGE
+
+    - name: Deploy to Cloud Run
+      run: |
+        IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workbee-repo/workbee-backend:${{ github.sha }}"
+        gcloud run deploy workbee-backend \
+          --image $IMAGE \
+          --region us-central1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --port 8080
+```
+
+---
+
+## 8. Deploy!
+
+- Commit and push your code to the `main` branch.
+- GitHub Actions will build, push, and deploy your app to Cloud Run.
+- After deployment, Cloud Run will provide an HTTPS URL (e.g., `https://workbee-backend-xxxxxx-uc.a.run.app`).
+- Your FastAPI backend is now live, scalable, and secure with HTTPS!
+
+---
+
+## 9. (Optional) Custom Domain
+
+- You can map a custom domain to your Cloud Run service via the GCP Console under Cloud Run → Manage custom domains.
+
+---
+
+## 10. (Optional) Environment Variables
+
+- To set environment variables, add `--set-env-vars VAR_NAME=value` to the `gcloud run deploy` command in your workflow.
+
+---
+
+# You're Done!
+- Every push to `main` will auto-deploy your latest code.
+- No server maintenance, no manual HTTPS setup, and pay only for what you use. 

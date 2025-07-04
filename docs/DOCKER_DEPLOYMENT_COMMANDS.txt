@@ -1,0 +1,61 @@
+# Docker Deployment Commands for FastAPI Backend
+
+## 1. Install Docker on Your GCP VM
+
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+# Log out and log back in, or run:
+newgrp docker
+
+## 2. Create a Dockerfile in Your Project Directory
+
+cat > Dockerfile <<EOF
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y gcc
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+EOF
+
+## 3. Build the Docker Image
+
+docker build -t workbee-back .
+
+## 4. Run the Docker Container
+
+docker run -d --name workbee-back -p 8000:8000 workbee-back
+# App will be available at http://<VM_EXTERNAL_IP>:8000/ or /docs
+
+## 5. (Optional) Use HTTPS with Nginx Reverse Proxy
+# Set up Nginx as before, proxying to localhost:8000 (the Docker container).
+
+## 6. (Optional) Push to Google Container Registry (GCR)
+
+# Authenticate Docker to GCR
+gcloud auth configure-docker
+
+# Tag your image
+docker tag workbee-back gcr.io/<YOUR_PROJECT_ID>/workbee-back:latest
+
+# Push to GCR
+docker push gcr.io/<YOUR_PROJECT_ID>/workbee-back:latest
+
+## 7. (Optional) Pull and Run from GCR on Any VM
+
+docker pull gcr.io/<YOUR_PROJECT_ID>/workbee-back:latest
+docker run -d --name workbee-back -p 8000:8000 gcr.io/<YOUR_PROJECT_ID>/workbee-back:latest
+
+## 8. (Optional) Example GitHub Actions Workflow
+# If you want a ready-to-use GitHub Actions workflow for CI/CD, just ask! 

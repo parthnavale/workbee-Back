@@ -1,44 +1,41 @@
-name: Deploy to VM
+name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r workbee-Back/requirements.txt
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker
 
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+    - name: Build and push Docker image
+      run: |
+        IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workbee-repo/workbee-backend:${{ github.sha }}"
+        gcloud artifacts repositories create workbee-repo --repository-format=docker --location=us-central1 || true
+        docker build -t $IMAGE .
+        docker push $IMAGE
 
-      - name: Deploy to VM
-        run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} '
-            cd /path/to/your/app &&
-            git pull origin main &&
-            source venv/bin/activate &&
-            pip install -r requirements.txt &&
-            sudo systemctl restart your-app-service
-          '
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+    - name: Deploy to Cloud Run
+      run: |
+        IMAGE="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/workbee-repo/workbee-backend:${{ github.sha }}"
+        gcloud run deploy workbee-backend \
+          --image $IMAGE \
+          --region us-central1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --port 8080
 
 # Replace /path/to/your/app, your-app-service, and ensure VM_USER and VM_HOST secrets are set in GitHub. 
