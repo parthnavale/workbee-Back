@@ -10,6 +10,7 @@ from models.job_application import JobApplication
 from api import user_routes, business_owner_routes, worker_routes, job_routes, application_routes
 from api.auth import router as auth_router
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 app = FastAPI()
 
@@ -34,7 +35,7 @@ app.add_middleware(
 def check_db():
     try:
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         print("Database connection successful.")
     except SQLAlchemyError as e:
         print("Database connection failed:", e)
