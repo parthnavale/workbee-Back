@@ -16,7 +16,6 @@ class WorkerCreate(BaseModel):
         extra = "ignore"
 
 class WorkerUpdate(BaseModel):
-    user_id: Optional[int] = None
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None

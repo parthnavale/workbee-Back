@@ -76,9 +76,9 @@ def test_user_operations():
     
     # Test user registration (Business Owner)
     user_data = {
-        "username": "business_owner_test",
-        "email": "business_owner_test@example.com",
-        "password": "password123",
+        "username": "tech_corp_owner",
+        "email": "ceo@techcorp.com",
+        "password": "securepass2024",
         "role": "poster"
     }
     resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
@@ -94,9 +94,9 @@ def test_user_operations():
     
     # Test user registration (Worker)
     worker_user_data = {
-        "username": "worker_test",
-        "email": "worker_test@example.com",
-        "password": "password123",
+        "username": "senior_dev",
+        "email": "alice@seniordev.com",
+        "password": "devpass2024",
         "role": "seeker"
     }
     resp = requests.post(f"{BASE_URL}/users/register", json=worker_user_data)
@@ -112,8 +112,8 @@ def test_user_operations():
     
     # Test user login
     login_data = {
-        "email": "business_owner_test@example.com",
-        "password": "password123"
+        "email": "ceo@techcorp.com",
+        "password": "securepass2024"
     }
     resp = requests.post(f"{BASE_URL}/users/login", json=login_data)
     print_result("User Login", resp)
@@ -138,17 +138,17 @@ def test_business_owner_operations():
     # CREATE - Create business owner
     business_owner_data = {
         "user_id": user_id,
-        "business_name": "Test Business Corp",
-        "contact_person": "John Doe",
-        "contact_phone": "1234567890",
-        "contact_email": "john@testbusiness.com",
-        "address": "123 Test Street",
-        "website": "https://testbusiness.com",
+        "business_name": "TechCorp Solutions",
+        "contact_person": "Sarah Johnson",
+        "contact_phone": "555-0123",
+        "contact_email": "sarah@techcorp.com",
+        "address": "123 Innovation Drive",
+        "website": "https://techcorp-solutions.com",
         "industry": "Technology",
-        "state": "CA",
+        "state": "California",
         "city": "San Francisco",
         "pincode": "94105",
-        "year_established": 2020
+        "year_established": 2018
     }
     resp = requests.post(f"{BASE_URL}/business-owners/", json=business_owner_data)
     print_result("Create Business Owner", resp)
@@ -171,9 +171,9 @@ def test_business_owner_operations():
     
     # UPDATE - Update business owner
     update_data = {
-        "business_name": "Updated Test Business Corp",
-        "contact_person": "Jane Doe",
-        "contact_phone": "0987654321"
+        "business_name": "TechCorp Solutions Inc.",
+        "contact_person": "Sarah Johnson-CEO",
+        "contact_phone": "555-0124"
     }
     resp = requests.put(f"{BASE_URL}/business-owners/{business_owner_id}", json=update_data)
     print_result("Update Business Owner", resp, 200)
@@ -201,13 +201,13 @@ def test_worker_operations():
     # CREATE - Create worker
     worker_data = {
         "user_id": user_id,
-        "name": "Alice Worker",
-        "phone": "5551234567",
-        "email": "alice@worker.com",
-        "skills": "Python,JavaScript,React",
-        "years_of_experience": 3,
-        "address": "456 Worker Street",
-        "state": "CA",
+        "name": "Alice Rodriguez",
+        "phone": "555-9876",
+        "email": "alice@seniordev.com",
+        "skills": "Python,JavaScript,React,Node.js,AWS",
+        "years_of_experience": 5,
+        "address": "456 Developer Avenue",
+        "state": "California",
         "city": "San Francisco",
         "pincode": "94107"
     }
@@ -232,9 +232,9 @@ def test_worker_operations():
     
     # UPDATE - Update worker
     update_data = {
-        "name": "Alice Updated Worker",
-        "skills": "Python,JavaScript,React,Node.js",
-        "years_of_experience": 4
+        "name": "Alice Rodriguez-Senior",
+        "skills": "Python,JavaScript,React,Node.js,AWS,Docker,Kubernetes",
+        "years_of_experience": 6
     }
     resp = requests.put(f"{BASE_URL}/workers/{worker_id}", json=update_data)
     print_result("Update Worker", resp, 200)
@@ -265,20 +265,20 @@ def test_job_operations():
     # CREATE - Create job
     job_data = {
         "business_owner_id": business_owner_id,
-        "title": "Senior Python Developer",
-        "description": "We are looking for an experienced Python developer...",
-        "required_skills": "Python,Django,FastAPI,PostgreSQL",
+        "title": "Senior Full Stack Developer",
+        "description": "We are seeking an experienced Full Stack Developer to join our dynamic team. The ideal candidate will have strong expertise in modern web technologies and a passion for creating innovative solutions.",
+        "required_skills": "Python,Django,FastAPI,React,JavaScript,PostgreSQL,AWS",
         "location": "San Francisco",
-        "address": "123 Tech Street",
-        "state": "CA",
+        "address": "123 Innovation Drive",
+        "state": "California",
         "city": "San Francisco",
         "pincode": "94105",
-        "hourly_rate": 75.0,
+        "hourly_rate": 85.0,
         "estimated_hours": 40,
-        "start_date": "2024-08-01T09:00:00",
-        "contact_person": "HR Manager",
-        "contact_phone": "1234567890",
-        "contact_email": "hr@techcompany.com"
+        "start_date": "2024-08-15T09:00:00",
+        "contact_person": "Sarah Johnson",
+        "contact_phone": "555-0123",
+        "contact_email": "hr@techcorp-solutions.com"
     }
     resp = requests.post(f"{BASE_URL}/jobs/", json=job_data)
     print_result("Create Job", resp)
@@ -301,9 +301,9 @@ def test_job_operations():
     
     # UPDATE - Update job
     update_data = {
-        "title": "Senior Full Stack Developer",
-        "hourly_rate": 85.0,
-        "required_skills": "Python,Django,FastAPI,React,PostgreSQL"
+        "title": "Senior Full Stack Developer - Remote",
+        "hourly_rate": 95.0,
+        "required_skills": "Python,Django,FastAPI,React,JavaScript,PostgreSQL,AWS,Docker"
     }
     resp = requests.put(f"{BASE_URL}/jobs/{job_id}", json=update_data)
     print_result("Update Job", resp, 200)
@@ -342,7 +342,7 @@ def test_job_application_operations():
     application_data = {
         "job_id": job_id,
         "worker_id": worker_id,
-        "message": "I am very interested in this position and believe I would be a great fit."
+        "message": "I am very excited about this opportunity! With my 5+ years of experience in full-stack development and expertise in the required technologies, I believe I would be an excellent fit for this role. I am particularly drawn to TechCorp's innovative approach and would love to contribute to your team."
     }
     resp = requests.post(f"{BASE_URL}/applications/", json=application_data)
     print_result("Create Job Application", resp)
@@ -370,7 +370,7 @@ def test_job_application_operations():
     # UPDATE - Update application status
     update_data = {
         "status": "accepted",
-        "message": "Congratulations! Your application has been accepted."
+        "message": "Congratulations Alice! We are excited to offer you the Senior Full Stack Developer position. Your experience and enthusiasm for our mission make you the perfect fit for our team."
     }
     resp = requests.put(f"{BASE_URL}/applications/{application_id}", json=update_data)
     print_result("Update Application Status", resp, 200)

@@ -18,7 +18,6 @@ class BusinessOwnerCreate(BaseModel):
         extra = "ignore"
 
 class BusinessOwnerUpdate(BaseModel):
-    user_id: Optional[int] = None
     business_name: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
