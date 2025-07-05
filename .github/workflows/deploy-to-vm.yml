@@ -24,8 +24,6 @@ jobs:
         ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} '
           cd ~/workbee-Back &&
           git pull origin main &&
-          source venv/bin/activate &&
-          pip install -r requirements.txt &&
           sudo systemctl restart fastapi
         '
       env:

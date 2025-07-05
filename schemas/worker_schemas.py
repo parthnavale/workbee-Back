@@ -15,6 +15,20 @@ class WorkerCreate(BaseModel):
     class Config:
         extra = "ignore"
 
+class WorkerUpdate(BaseModel):
+    user_id: Optional[int] = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    skills: Optional[str] = None
+    years_of_experience: Optional[int] = None
+    address: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    class Config:
+        extra = "ignore"
+
 class WorkerResponse(WorkerCreate):
     id: int
     class Config:

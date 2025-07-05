@@ -1,16 +1,44 @@
 import requests
 import json
 
-BASE_URL = "http://34.41.68.175:8000"
+BASE_URL = "https://myworkbee.duckdns.org"
 
 # Helper to print test results
 def print_result(name, resp):
     print(f"\n{name}")
     print(f"Status: {resp.status_code}")
     try:
-        print(json.dumps(resp.json(), indent=2))
-    except Exception:
-        print(resp.text)
+        if resp.text:
+            print(json.dumps(resp.json(), indent=2))
+        else:
+            print("Empty response")
+    except Exception as e:
+        print(f"Response text: {resp.text}")
+        print(f"Error parsing JSON: {e}")
+
+# 0. Test JWT Authentication
+print("=== Testing JWT Authentication ===")
+
+# Get JWT token
+token_data = {
+    "username": "testuser",
+    "password": "testpassword"
+}
+resp = requests.post(f"{BASE_URL}/api/auth/token", data=token_data)
+print_result("Get JWT Token", resp)
+
+if resp.status_code == 200:
+    token = resp.json().get("access_token")
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test protected endpoint
+    resp = requests.get(f"{BASE_URL}/api/auth/protected", headers=headers)
+    print_result("Test Protected Endpoint", resp)
+else:
+    print("Failed to get JWT token, skipping protected endpoint test")
+    headers = {}
+
+print("\n=== Testing Main API Endpoints ===")
 
 # 1. Register a user (business owner)
 user_data = {
@@ -21,7 +49,7 @@ user_data = {
 }
 resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
 print_result("Register User (Business Owner)", resp)
-user_id = resp.json().get("id")
+user_id = resp.json().get("id") if resp.status_code == 200 else None
 
 # 2. Register a user (worker)
 worker_user_data = {
@@ -32,7 +60,13 @@ worker_user_data = {
 }
 resp = requests.post(f"{BASE_URL}/users/register", json=worker_user_data)
 print_result("Register User (Worker)", resp)
-worker_user_id = resp.json().get("id")
+worker_user_id = resp.json().get("id") if resp.status_code == 200 else None
+
+# Skip remaining tests if user registration failed
+if not user_id or not worker_user_id:
+    print("\nSkipping remaining tests due to user registration failure.")
+    print("Please check the FastAPI server logs for database errors.")
+    exit(1)
 
 # 3. Create a business owner (requires user_id)
 business_owner_data = {

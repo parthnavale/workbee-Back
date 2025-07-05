@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from schemas.worker_schemas import WorkerCreate, WorkerResponse
+from schemas.worker_schemas import WorkerCreate, WorkerUpdate, WorkerResponse
 from core.database import get_db
 from models.worker import Worker
 
@@ -26,7 +26,7 @@ def get_all_workers(db: Session = Depends(get_db)):
     return db.query(Worker).all()
 
 @router.put("/{worker_id}", response_model=WorkerResponse)
-def update_worker(worker_id: int, worker_update: WorkerCreate, db: Session = Depends(get_db)):
+def update_worker(worker_id: int, worker_update: WorkerUpdate, db: Session = Depends(get_db)):
     worker = db.query(Worker).filter(Worker.id == worker_id).first()
     if not worker:
         raise HTTPException(status_code=404, detail="Worker not found")
