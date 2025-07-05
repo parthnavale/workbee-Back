@@ -1,12 +1,16 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from schemas.user_schemas import UserCreate, UserLogin, UserResponse
+from schemas.user_schemas import UserCreate, UserUpdate, UserLogin, UserResponse
 from core.database import get_db
 from models.user import User
+from models.business_owner import BusinessOwner
+from models.worker import Worker
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
+from typing import List, Optional
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -15,6 +19,7 @@ SECRET_KEY = os.environ.get("WORKBEE_SECRET_KEY", "workbee_secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -22,11 +27,30 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: Optional[str] = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
 
 @router.post("/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -49,5 +73,74 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends()):
-    return current_user 
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.get("/", response_model=List[UserResponse])
+def get_all_users(db: Session = Depends(get_db)):
+    """Get all users"""
+    users = db.query(User).all()
+    return users
+
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    """Get a specific user by ID"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    """Update a user"""
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if email is already taken by another user
+    if user_update.email and user_update.email != db_user.email:
+        existing_user = db.query(User).filter(User.email == user_update.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Update user fields
+    if user_update.username is not None:
+        db_user.username = user_update.username
+    if user_update.email is not None:
+        db_user.email = str(user_update.email)
+    if user_update.role is not None:
+        db_user.role = user_update.role
+    if user_update.password is not None:
+        db_user.password_hash = get_password_hash(user_update.password)
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """Delete a user and all associated data"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check for associated data
+    business_owner = db.query(BusinessOwner).filter(BusinessOwner.user_id == user_id).first()
+    worker = db.query(Worker).filter(Worker.user_id == user_id).first()
+    
+    if business_owner or worker:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete user with associated data. User has business_owner_id={business_owner.id if business_owner else None}, worker_id={worker.id if worker else None}. Delete the associated profile first."
+        )
+    
+    # Delete the user
+    db.delete(user)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "User deleted successfully",
+        "deleted_user_id": user_id,
+        "deleted_at": datetime.utcnow().isoformat()
+    } 

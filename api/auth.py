@@ -1,10 +1,11 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
-SECRET_KEY = "your-secret-key"  # Change this in production!
+SECRET_KEY = os.environ.get("WORKBEE_SECRET_KEY", "workbee_secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -28,7 +29,7 @@ def authenticate_user(username: str, password: str):
         return False
     return fake_user
 
-def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta is None:
         expires_delta = timedelta(minutes=15)

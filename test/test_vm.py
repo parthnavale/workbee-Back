@@ -1,11 +1,19 @@
+# ===================== DYNAMIC TEST SUMMARY =====================
+# This summary will be calculated dynamically based on actual test results
+# ================================================================
+
 import requests
 import json
 import os
 import random
 import string
 import time
+import urllib3
 
-BASE_URL = "http://<your-vm-domain-or-ip>:8000"  # <-- Set your VM's public IP or domain here
+# Disable SSL warnings for self-signed certificates
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+BASE_URL = "https://workbee.duckdns.org"  # <-- Your VM's domain with HTTPS
 
 # Test result tracking
 test_results = {
@@ -82,6 +90,10 @@ def display_summary():
         print(f"⚠️  {test_results['unexpected']} test(s) need attention.")
     print("="*60)
 
+# Create a session with SSL verification disabled for self-signed certificates
+session = requests.Session()
+session.verify = False
+
 # Store created IDs for cleanup
 test_data = {
     'user_ids': [],
@@ -104,39 +116,39 @@ def test_user_crud():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     print_result("Create User (valid)", resp, 200)
     user_id = None
     if resp.status_code == 200:
         user_id = resp.json().get("id")
         test_data['user_ids'].append(user_id)
     # Create user (duplicate email)
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     print_result("Create User (duplicate email)", resp, 400)
     # Create user (missing fields)
-    resp = requests.post(f"{BASE_URL}/users/register", json={"username": "abc"})
+    resp = session.post(f"{BASE_URL}/users/register", json={"username": "abc"})
     print_result("Create User (missing fields)", resp, 422)
     # Login (valid)
     login_data = {"email": user_email, "password": "TestPass123!"}
-    resp = requests.post(f"{BASE_URL}/users/login", json=login_data)
+    resp = session.post(f"{BASE_URL}/users/login", json=login_data)
     print_result("User Login (valid)", resp, 200)
     token = None
     if resp.status_code == 200:
         token = resp.json().get("access_token")
         test_data['tokens']['user'] = token
     # Login (wrong password)
-    resp = requests.post(f"{BASE_URL}/users/login", json={"email": user_email, "password": "wrongpass"})
+    resp = session.post(f"{BASE_URL}/users/login", json={"email": user_email, "password": "wrongpass"})
     print_result("User Login (wrong password)", resp, 400)
     # Get me (unauthorized)
-    resp = requests.get(f"{BASE_URL}/users/me")
+    resp = session.get(f"{BASE_URL}/users/me")
     print_result("Get Me (unauthorized)", resp, 401)
     # Get me (authorized)
     headers = {"Authorization": f"Bearer {token}"} if token else {}
-    resp = requests.get(f"{BASE_URL}/users/me", headers=headers)
+    resp = session.get(f"{BASE_URL}/users/me", headers=headers)
     print_result("Get Me (authorized)", resp, 200)
     # Delete user (should fail, has no profile yet)
     if user_id:
-        resp = requests.delete(f"{BASE_URL}/users/{user_id}")
+        resp = session.delete(f"{BASE_URL}/users/{user_id}")
         print_result("Delete User (should succeed, no profile)", resp, 200)
         test_data['user_ids'].remove(user_id)
 
@@ -151,7 +163,7 @@ def test_business_owner_crud():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     user_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['user_ids'].append(user_id)
     # Create business owner (valid)
@@ -169,7 +181,7 @@ def test_business_owner_crud():
         "pincode": "94105",
         "year_established": 2020
     }
-    resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data)
+    resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
     print_result("Create Business Owner (valid)", resp, 200)
     bo_id = resp.json().get("id") if resp.status_code == 200 else None
     if bo_id:
@@ -177,33 +189,33 @@ def test_business_owner_crud():
     # Create business owner (non-existent user)
     bo_data_bad = bo_data.copy()
     bo_data_bad['user_id'] = 999999
-    resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data_bad)
+    resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data_bad)
     print_result("Create Business Owner (non-existent user)", resp, 400)
     # Get all business owners
-    resp = requests.get(f"{BASE_URL}/business-owners/")
+    resp = session.get(f"{BASE_URL}/business-owners/")
     print_result("Get All Business Owners", resp, 200)
     # Get specific business owner
     if bo_id:
-        resp = requests.get(f"{BASE_URL}/business-owners/{bo_id}")
+        resp = session.get(f"{BASE_URL}/business-owners/{bo_id}")
         print_result("Get Business Owner (by id)", resp, 200)
     # Update business owner (valid)
     if bo_id:
         update_data = {"business_name": "Updated Biz", "contact_person": "New Owner"}
-        resp = requests.put(f"{BASE_URL}/business-owners/{bo_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/business-owners/{bo_id}", json=update_data)
         print_result("Update Business Owner (valid)", resp, 200)
     # Update business owner (invalid field)
     if bo_id:
         update_data = {"nonexistent_field": "value"}
-        resp = requests.put(f"{BASE_URL}/business-owners/{bo_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/business-owners/{bo_id}", json=update_data)
         print_result("Update Business Owner (invalid field)", resp, 200)
     # Delete business owner
     if bo_id:
-        resp = requests.delete(f"{BASE_URL}/business-owners/{bo_id}")
+        resp = session.delete(f"{BASE_URL}/business-owners/{bo_id}")
         print_result("Delete Business Owner (valid)", resp, 200)
         test_data['business_owner_ids'].remove(bo_id)
     # Delete user (should succeed now)
     if user_id:
-        resp = requests.delete(f"{BASE_URL}/users/{user_id}")
+        resp = session.delete(f"{BASE_URL}/users/{user_id}")
         print_result("Delete User (after BO deleted)", resp, 200)
         test_data['user_ids'].remove(user_id)
 
@@ -218,7 +230,7 @@ def test_worker_crud():
         "password": "TestPass123!",
         "role": "seeker"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     user_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['user_ids'].append(user_id)
     # Create worker (valid)
@@ -234,7 +246,7 @@ def test_worker_crud():
         "city": "SF",
         "pincode": "94105"
     }
-    resp = requests.post(f"{BASE_URL}/workers/", json=worker_data)
+    resp = session.post(f"{BASE_URL}/workers/", json=worker_data)
     print_result("Create Worker (valid)", resp, 200)
     worker_id = resp.json().get("id") if resp.status_code == 200 else None
     if worker_id:
@@ -242,33 +254,33 @@ def test_worker_crud():
     # Create worker (non-existent user)
     worker_data_bad = worker_data.copy()
     worker_data_bad['user_id'] = 999999
-    resp = requests.post(f"{BASE_URL}/workers/", json=worker_data_bad)
+    resp = session.post(f"{BASE_URL}/workers/", json=worker_data_bad)
     print_result("Create Worker (non-existent user)", resp, 400)
     # Get all workers
-    resp = requests.get(f"{BASE_URL}/workers/")
+    resp = session.get(f"{BASE_URL}/workers/")
     print_result("Get All Workers", resp, 200)
     # Get specific worker
     if worker_id:
-        resp = requests.get(f"{BASE_URL}/workers/{worker_id}")
+        resp = session.get(f"{BASE_URL}/workers/{worker_id}")
         print_result("Get Worker (by id)", resp, 200)
     # Update worker (valid)
     if worker_id:
         update_data = {"name": "Updated Worker", "skills": "Python,FastAPI,SQLAlchemy"}
-        resp = requests.put(f"{BASE_URL}/workers/{worker_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/workers/{worker_id}", json=update_data)
         print_result("Update Worker (valid)", resp, 200)
     # Update worker (invalid field)
     if worker_id:
         update_data = {"nonexistent_field": "value"}
-        resp = requests.put(f"{BASE_URL}/workers/{worker_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/workers/{worker_id}", json=update_data)
         print_result("Update Worker (invalid field)", resp, 200)
     # Delete worker
     if worker_id:
-        resp = requests.delete(f"{BASE_URL}/workers/{worker_id}")
+        resp = session.delete(f"{BASE_URL}/workers/{worker_id}")
         print_result("Delete Worker (valid)", resp, 200)
         test_data['worker_ids'].remove(worker_id)
     # Delete user (should succeed now)
     if user_id:
-        resp = requests.delete(f"{BASE_URL}/users/{user_id}")
+        resp = session.delete(f"{BASE_URL}/users/{user_id}")
         print_result("Delete User (after Worker deleted)", resp, 200)
         test_data['user_ids'].remove(user_id)
 
@@ -283,7 +295,7 @@ def test_job_crud():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     user_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['user_ids'].append(user_id)
     bo_data = {
@@ -300,7 +312,7 @@ def test_job_crud():
         "pincode": "94105",
         "year_established": 2020
     }
-    resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data)
+    resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
     bo_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['business_owner_ids'].append(bo_id)
     # Create job (valid)
@@ -321,7 +333,7 @@ def test_job_crud():
         "contact_phone": "1234567890",
         "contact_email": user_email
     }
-    resp = requests.post(f"{BASE_URL}/jobs/", json=job_data)
+    resp = session.post(f"{BASE_URL}/jobs/", json=job_data)
     print_result("Create Job (valid)", resp, 200)
     job_id = resp.json().get("id") if resp.status_code == 200 else None
     if job_id:
@@ -329,38 +341,38 @@ def test_job_crud():
     # Create job (non-existent business owner)
     job_data_bad = job_data.copy()
     job_data_bad['business_owner_id'] = 999999
-    resp = requests.post(f"{BASE_URL}/jobs/", json=job_data_bad)
+    resp = session.post(f"{BASE_URL}/jobs/", json=job_data_bad)
     print_result("Create Job (non-existent business owner)", resp, 400)
     # Get all jobs
-    resp = requests.get(f"{BASE_URL}/jobs/")
+    resp = session.get(f"{BASE_URL}/jobs/")
     print_result("Get All Jobs", resp, 200)
     # Get specific job
     if job_id:
-        resp = requests.get(f"{BASE_URL}/jobs/{job_id}")
+        resp = session.get(f"{BASE_URL}/jobs/{job_id}")
         print_result("Get Job (by id)", resp, 200)
     # Update job (valid)
     if job_id:
         update_data = {"title": "Updated Job", "hourly_rate": 60.0}
-        resp = requests.put(f"{BASE_URL}/jobs/{job_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/jobs/{job_id}", json=update_data)
         print_result("Update Job (valid)", resp, 200)
     # Update job (invalid field)
     if job_id:
         update_data = {"nonexistent_field": "value"}
-        resp = requests.put(f"{BASE_URL}/jobs/{job_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/jobs/{job_id}", json=update_data)
         print_result("Update Job (invalid field)", resp, 200)
     # Delete job
     if job_id:
-        resp = requests.delete(f"{BASE_URL}/jobs/{job_id}")
+        resp = session.delete(f"{BASE_URL}/jobs/{job_id}")
         print_result("Delete Job (valid)", resp, 200)
         test_data['job_ids'].remove(job_id)
     # Delete business owner
     if bo_id:
-        resp = requests.delete(f"{BASE_URL}/business-owners/{bo_id}")
+        resp = session.delete(f"{BASE_URL}/business-owners/{bo_id}")
         print_result("Delete Business Owner (after job deleted)", resp, 200)
         test_data['business_owner_ids'].remove(bo_id)
     # Delete user
     if user_id:
-        resp = requests.delete(f"{BASE_URL}/users/{user_id}")
+        resp = session.delete(f"{BASE_URL}/users/{user_id}")
         print_result("Delete User (after BO deleted)", resp, 200)
         test_data['user_ids'].remove(user_id)
 
@@ -376,7 +388,7 @@ def test_application_crud():
         "password": "TestPass123!",
         "role": "seeker"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     worker_user_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['user_ids'].append(worker_user_id)
     worker_data = {
@@ -391,7 +403,7 @@ def test_application_crud():
         "city": "SF",
         "pincode": "94105"
     }
-    resp = requests.post(f"{BASE_URL}/workers/", json=worker_data)
+    resp = session.post(f"{BASE_URL}/workers/", json=worker_data)
     worker_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['worker_ids'].append(worker_id)
     # Business owner and job
@@ -403,7 +415,7 @@ def test_application_crud():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=bo_user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=bo_user_data)
     bo_user_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['user_ids'].append(bo_user_id)
     bo_data = {
@@ -420,7 +432,7 @@ def test_application_crud():
         "pincode": "94105",
         "year_established": 2020
     }
-    resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data)
+    resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
     bo_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['business_owner_ids'].append(bo_id)
     job_data = {
@@ -440,7 +452,7 @@ def test_application_crud():
         "contact_phone": "1111111111",
         "contact_email": bo_email
     }
-    resp = requests.post(f"{BASE_URL}/jobs/", json=job_data)
+    resp = session.post(f"{BASE_URL}/jobs/", json=job_data)
     job_id = resp.json().get("id") if resp.status_code == 200 else None
     test_data['job_ids'].append(job_id)
     # Create application (valid)
@@ -449,7 +461,7 @@ def test_application_crud():
         "worker_id": worker_id,
         "message": "I want this job!"
     }
-    resp = requests.post(f"{BASE_URL}/applications/", json=app_data)
+    resp = session.post(f"{BASE_URL}/applications/", json=app_data)
     print_result("Create Application (valid)", resp, 200)
     app_id = resp.json().get("id") if resp.status_code == 200 else None
     if app_id:
@@ -457,54 +469,54 @@ def test_application_crud():
     # Create application (non-existent job)
     app_data_bad = app_data.copy()
     app_data_bad['job_id'] = 999999
-    resp = requests.post(f"{BASE_URL}/applications/", json=app_data_bad)
+    resp = session.post(f"{BASE_URL}/applications/", json=app_data_bad)
     print_result("Create Application (non-existent job)", resp, 400)
     # Create application (non-existent worker)
     app_data_bad = app_data.copy()
     app_data_bad['worker_id'] = 999999
-    resp = requests.post(f"{BASE_URL}/applications/", json=app_data_bad)
+    resp = session.post(f"{BASE_URL}/applications/", json=app_data_bad)
     print_result("Create Application (non-existent worker)", resp, 400)
     # Get all applications
-    resp = requests.get(f"{BASE_URL}/applications/")
+    resp = session.get(f"{BASE_URL}/applications/")
     print_result("Get All Applications", resp, 200)
     # Get application by id
     if app_id:
-        resp = requests.get(f"{BASE_URL}/applications/{app_id}")
+        resp = session.get(f"{BASE_URL}/applications/{app_id}")
         print_result("Get Application (by id)", resp, 200)
     # Update application (valid)
     if app_id:
         update_data = {"status": "accepted", "message": "Congrats!"}
-        resp = requests.put(f"{BASE_URL}/applications/{app_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/applications/{app_id}", json=update_data)
         print_result("Update Application (valid)", resp, 200)
     # Update application (invalid field)
     if app_id:
         update_data = {"nonexistent_field": "value"}
-        resp = requests.put(f"{BASE_URL}/applications/{app_id}", json=update_data)
+        resp = session.put(f"{BASE_URL}/applications/{app_id}", json=update_data)
         print_result("Update Application (invalid field)", resp, 200)
     # Delete application
     if app_id:
-        resp = requests.delete(f"{BASE_URL}/applications/{app_id}")
+        resp = session.delete(f"{BASE_URL}/applications/{app_id}")
         print_result("Delete Application (valid)", resp, 200)
         test_data['application_ids'].remove(app_id)
     # Delete job
     if job_id:
-        resp = requests.delete(f"{BASE_URL}/jobs/{job_id}")
+        resp = session.delete(f"{BASE_URL}/jobs/{job_id}")
         print_result("Delete Job (after app deleted)", resp, 200)
         test_data['job_ids'].remove(job_id)
     # Delete business owner
     if bo_id:
-        resp = requests.delete(f"{BASE_URL}/business-owners/{bo_id}")
+        resp = session.delete(f"{BASE_URL}/business-owners/{bo_id}")
         print_result("Delete Business Owner (after job deleted)", resp, 200)
         test_data['business_owner_ids'].remove(bo_id)
     # Delete worker
     if worker_id:
-        resp = requests.delete(f"{BASE_URL}/workers/{worker_id}")
+        resp = session.delete(f"{BASE_URL}/workers/{worker_id}")
         print_result("Delete Worker (after app deleted)", resp, 200)
         test_data['worker_ids'].remove(worker_id)
     # Delete users
     for uid in [worker_user_id, bo_user_id]:
         if uid:
-            resp = requests.delete(f"{BASE_URL}/users/{uid}")
+            resp = session.delete(f"{BASE_URL}/users/{uid}")
             print_result(f"Delete User (after app deleted, id={uid})", resp, 200)
             test_data['user_ids'].remove(uid)
 
@@ -519,7 +531,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data_long)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data_long)
     print_result("Create User (extremely long username)", resp, 422)
     
     # Test SQL injection attempts
@@ -529,7 +541,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=sql_injection_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=sql_injection_data)
     print_result("Create User (SQL injection attempt)", resp, 422)  # Should be blocked for security
     
     # Test XSS attempts
@@ -539,7 +551,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=xss_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=xss_data)
     print_result("Create User (XSS attempt)", resp, 422)  # Should be blocked for security
     
     # Test invalid email formats
@@ -557,7 +569,7 @@ def test_additional_edge_cases():
             "password": "TestPass123!",
             "role": "poster"
         }
-        resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+        resp = session.post(f"{BASE_URL}/users/register", json=user_data)
         print_result(f"Create User (invalid email: {email})", resp, 422)
     
     # Test invalid phone numbers
@@ -571,7 +583,7 @@ def test_additional_edge_cases():
             "password": "TestPass123!",
             "role": "poster"
         }
-        resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+        resp = session.post(f"{BASE_URL}/users/register", json=user_data)
         user_id = resp.json().get("id") if resp.status_code == 200 else None
         if user_id:
             test_data['user_ids'].append(user_id)
@@ -589,7 +601,7 @@ def test_additional_edge_cases():
                 "pincode": "94105",
                 "year_established": 2020
             }
-            resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data)
+            resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
             print_result(f"Create Business Owner (invalid phone: {phone})", resp, 422)
     
     # Test negative values
@@ -600,7 +612,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
     user_id = resp.json().get("id") if resp.status_code == 200 else None
     if user_id:
         test_data['user_ids'].append(user_id)
@@ -618,7 +630,7 @@ def test_additional_edge_cases():
             "pincode": "94105",
             "year_established": -2020  # Negative year
         }
-        resp = requests.post(f"{BASE_URL}/business-owners/", json=bo_data)
+        resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
         print_result("Create Business Owner (negative year)", resp, 422)
     
     # Test concurrent operations (simulate race conditions)
@@ -630,52 +642,52 @@ def test_additional_edge_cases():
             "password": "TestPass123!",
             "role": "poster"
         }
-        resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+        resp = session.post(f"{BASE_URL}/users/register", json=user_data)
         print_result(f"Create User (concurrent: {email})", resp, 200)
         if resp.status_code == 200:
             test_data['user_ids'].append(resp.json().get("id"))
     
     # Test invalid HTTP methods
-    resp = requests.patch(f"{BASE_URL}/users/1")
+    resp = session.patch(f"{BASE_URL}/users/1")
     print_result("PATCH on users (invalid method)", resp, 405)
     
-    resp = requests.put(f"{BASE_URL}/users/")
+    resp = session.put(f"{BASE_URL}/users/")
     print_result("PUT on users collection (invalid method)", resp, 405)
     
     # Test non-existent resources
-    resp = requests.get(f"{BASE_URL}/users/999999")
+    resp = session.get(f"{BASE_URL}/users/999999")
     print_result("Get non-existent user", resp, 404)
     
-    resp = requests.put(f"{BASE_URL}/users/999999", json={"username": "test"})
+    resp = session.put(f"{BASE_URL}/users/999999", json={"username": "test"})
     print_result("Update non-existent user", resp, 404)
     
-    resp = requests.delete(f"{BASE_URL}/users/999999")
+    resp = session.delete(f"{BASE_URL}/users/999999")
     print_result("Delete non-existent user", resp, 404)
     
     # Test malformed JSON
     headers = {"Content-Type": "application/json"}
-    resp = requests.post(f"{BASE_URL}/users/register", data="invalid json", headers=headers)
+    resp = session.post(f"{BASE_URL}/users/register", data="invalid json", headers=headers)
     print_result("Create User (malformed JSON)", resp, 422)
     
     # Test empty request body
-    resp = requests.post(f"{BASE_URL}/users/register", json={})
+    resp = session.post(f"{BASE_URL}/users/register", json={})
     print_result("Create User (empty body)", resp, 422)
     
     # Test JWT token edge cases
     # Invalid token
     headers = {"Authorization": "Bearer invalid_token"}
-    resp = requests.get(f"{BASE_URL}/users/me", headers=headers)
+    resp = session.get(f"{BASE_URL}/users/me", headers=headers)
     print_result("Get Me (invalid JWT)", resp, 401)
     
     # Expired token (if you have a way to generate one)
     # Malformed token
     headers = {"Authorization": "Bearer not.a.valid.token"}
-    resp = requests.get(f"{BASE_URL}/users/me", headers=headers)
+    resp = session.get(f"{BASE_URL}/users/me", headers=headers)
     print_result("Get Me (malformed JWT)", resp, 401)
     
     # Test rate limiting (if implemented)
     for i in range(10):
-        resp = requests.post(f"{BASE_URL}/users/register", json={
+        resp = session.post(f"{BASE_URL}/users/register", json={
             "username": f"rate_limit_{i}_{rand_str()}",
             "email": f"rate_limit_{i}_{rand_str()}@test.com",
             "password": "TestPass123!",
@@ -692,7 +704,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!" * 1000,  # Very large password
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=large_payload)
+    resp = session.post(f"{BASE_URL}/users/register", json=large_payload)
     print_result("Create User (very large payload)", resp, 422)
     
     # Test special characters in inputs
@@ -702,7 +714,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=special_chars_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=special_chars_data)
     print_result("Create User (special characters in username)", resp, 422)  # Should be blocked for security
     if resp.status_code == 200:
         test_data['user_ids'].append(resp.json().get("id"))
@@ -714,7 +726,7 @@ def test_additional_edge_cases():
         "password": "TestPass123!",
         "role": "poster"
     }
-    resp = requests.post(f"{BASE_URL}/users/register", json=unicode_data)
+    resp = session.post(f"{BASE_URL}/users/register", json=unicode_data)
     print_result("Create User (Unicode characters)", resp, 422)  # Should be blocked for security
     if resp.status_code == 200:
         test_data['user_ids'].append(resp.json().get("id"))
@@ -731,28 +743,28 @@ def test_performance_edge_cases():
             "password": "TestPass123!",
             "role": "poster"
         }
-        resp = requests.post(f"{BASE_URL}/users/register", json=user_data)
+        resp = session.post(f"{BASE_URL}/users/register", json=user_data)
         if resp.status_code == 200:
             test_data['user_ids'].append(resp.json().get("id"))
     
     # Test getting all users (should handle large datasets)
-    resp = requests.get(f"{BASE_URL}/users/")
+    resp = session.get(f"{BASE_URL}/users/")
     print_result("Get all users (performance test)", resp, 200)
     
     # Test getting all business owners
-    resp = requests.get(f"{BASE_URL}/business-owners/")
+    resp = session.get(f"{BASE_URL}/business-owners/")
     print_result("Get all business owners (performance test)", resp, 200)
     
     # Test getting all workers
-    resp = requests.get(f"{BASE_URL}/workers/")
+    resp = session.get(f"{BASE_URL}/workers/")
     print_result("Get all workers (performance test)", resp, 200)
     
     # Test getting all jobs
-    resp = requests.get(f"{BASE_URL}/jobs/")
+    resp = session.get(f"{BASE_URL}/jobs/")
     print_result("Get all jobs (performance test)", resp, 200)
     
     # Test getting all applications
-    resp = requests.get(f"{BASE_URL}/applications/")
+    resp = session.get(f"{BASE_URL}/applications/")
     print_result("Get all applications (performance test)", resp, 200)
 
 def main():
@@ -765,7 +777,6 @@ def main():
     test_additional_edge_cases()
     test_performance_edge_cases()
     display_summary()
-    print("\nAll tests completed. Check above for any ❌ failures.")
 
 if __name__ == "__main__":
     main() 

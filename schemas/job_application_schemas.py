@@ -15,4 +15,8 @@ class JobApplicationResponse(JobApplicationCreate):
     applied_date: datetime
     responded_date: Optional[datetime] = None
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+class JobApplicationUpdate(BaseModel):
+    status: Optional[str] = None
+    message: Optional[str] = None 
