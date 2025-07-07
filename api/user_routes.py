@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from schemas.user_schemas import UserCreate, UserUpdate, UserLogin, UserResponse
+from schemas.business_owner_schemas import BusinessOwnerCreate
 from core.database import get_db
 from models.user import User
 from models.business_owner import BusinessOwner
@@ -11,6 +12,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from typing import List, Optional
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -149,4 +151,44 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         "message": "User deleted successfully",
         "deleted_user_id": user_id,
         "deleted_at": datetime.utcnow().isoformat()
-    } 
+    }
+
+@router.post("/register-business-owner", response_model=UserResponse)
+def register_business_owner(
+    user: UserCreate,
+    business_owner: BusinessOwnerCreate,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Check if user already exists
+        db_user = db.query(User).filter(User.email == user.email).first()
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        hashed_password = get_password_hash(user.password)
+        new_user = User(username=user.username, email=user.email, password_hash=hashed_password, role="poster")
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        # Create business owner profile
+        new_owner = BusinessOwner(
+            user_id=new_user.id,
+            business_name=business_owner.business_name,
+            contact_person=business_owner.contact_person,
+            contact_phone=business_owner.contact_phone,
+            contact_email=business_owner.contact_email,
+            address=business_owner.address,
+            website=business_owner.website,
+            industry=business_owner.industry,
+            state=business_owner.state,
+            city=business_owner.city,
+            pincode=business_owner.pincode,
+            year_established=business_owner.year_established
+        )
+        db.add(new_owner)
+        db.commit()
+        db.refresh(new_owner)
+        return new_user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {e}") 
