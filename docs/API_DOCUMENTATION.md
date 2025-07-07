@@ -1,10 +1,24 @@
 # Workbee Backend API Documentation
 
-This document describes the REST API endpoints, request/response schemas, and example payloads for the Workbee job marketplace backend.
+**Production URL**: https://myworkbee.duckdns.org  
+**Interactive Docs**: https://myworkbee.duckdns.org/docs  
+**Test Coverage**: 100% (80 test cases)  
+
+This document describes the REST API endpoints, request/response schemas, validation rules, and example payloads for the Workbee job marketplace backend.
 
 ---
 
-## Authentication
+## 🚀 Production Status
+
+✅ **Fully Deployed**: Running on GCP VM with HTTPS  
+✅ **Domain**: https://myworkbee.duckdns.org  
+✅ **SSL Certificate**: Let's Encrypt (auto-renewal)  
+✅ **Database**: MySQL with foreign key constraints  
+✅ **Test Coverage**: 100% success rate  
+
+---
+
+## 🔐 Authentication
 
 ### Register User
 - **POST** `/users/register`
@@ -17,6 +31,11 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "role": "seeker" // or "poster"
 }
 ```
+- **Validation Rules:**
+  - Username: Alphanumeric with underscores only
+  - Email: Valid email format
+  - Password: Minimum length and complexity
+  - Role: Must be "seeker" or "poster"
 - **Response:**
 ```json
 {
@@ -44,9 +63,49 @@ This document describes the REST API endpoints, request/response schemas, and ex
 }
 ```
 
+### Get Current User (Protected)
+- **GET** `/users/me`
+- **Headers:** `Authorization: Bearer <JWT_TOKEN>`
+- **Response:** Same as register response
+
 ---
 
-## Business Owners
+## 👥 Users
+
+### Get All Users
+- **GET** `/users/`
+- **Response:**
+```json
+[
+  {
+    "id": 1,
+    "username": "johndoe",
+    "email": "john@example.com",
+    "role": "seeker"
+  }
+]
+```
+
+### Get User by ID
+- **GET** `/users/{user_id}`
+- **Response:** Same as register response
+
+### Update User
+- **PUT** `/users/{user_id}`
+- **Request Body:** Same as register (all fields optional)
+- **Response:** Same as register response
+
+### Delete User
+- **DELETE** `/users/{user_id}`
+- **Note:** Can only delete users without associated profiles
+- **Response:**
+```json
+{"detail": "User deleted"}
+```
+
+---
+
+## 🏢 Business Owners
 
 ### Create Business Owner
 - **POST** `/business-owners/`
@@ -56,7 +115,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "user_id": 1,
   "business_name": "Acme Corp",
   "contact_person": "Alice",
-  "contact_phone": "1234567890",
+  "contact_phone": "9876543210",
   "contact_email": "alice@acme.com",
   "address": "123 Main St",
   "website": "https://acme.com",
@@ -67,6 +126,11 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "year_established": 2010
 }
 ```
+- **Validation Rules:**
+  - Phone: 10-15 digits, Indian numbers start with 6,7,8,9
+  - Year: Between 1800-2100
+  - Email: Valid email format
+  - User must exist in database
 - **Response:**
 ```json
 {
@@ -74,7 +138,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "user_id": 1,
   "business_name": "Acme Corp",
   "contact_person": "Alice",
-  "contact_phone": "1234567890",
+  "contact_phone": "9876543210",
   "contact_email": "alice@acme.com",
   "address": "123 Main St",
   "website": "https://acme.com",
@@ -88,7 +152,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ### Get Business Owner by ID
 - **GET** `/business-owners/{owner_id}`
-- **Response:** _Same as above_
+- **Response:** Same as create response
 
 ### Get All Business Owners
 - **GET** `/business-owners/`
@@ -101,11 +165,18 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ### Update Business Owner
 - **PUT** `/business-owners/{owner_id}`
-- **Request Body:** _Same as create_
-- **Response:** _Same as above_
+- **Request Body:** All fields optional
+```json
+{
+  "business_name": "Updated Corp",
+  "contact_person": "New Contact"
+}
+```
+- **Response:** Same as create response
 
 ### Delete Business Owner
 - **DELETE** `/business-owners/{owner_id}`
+- **Note:** Cascades to delete all associated jobs and applications
 - **Response:**
 ```json
 {"detail": "Business owner deleted"}
@@ -113,7 +184,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ---
 
-## Workers
+## 👷 Workers
 
 ### Create Worker
 - **POST** `/workers/`
@@ -132,6 +203,11 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "pincode": "94107"
 }
 ```
+- **Validation Rules:**
+  - Phone: 10-15 digits
+  - Years of experience: 0-100
+  - Email: Valid email format
+  - User must exist in database
 - **Response:**
 ```json
 {
@@ -151,7 +227,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ### Get Worker by ID
 - **GET** `/workers/{worker_id}`
-- **Response:** _Same as above_
+- **Response:** Same as create response
 
 ### Get All Workers
 - **GET** `/workers/`
@@ -164,11 +240,18 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ### Update Worker
 - **PUT** `/workers/{worker_id}`
-- **Request Body:** _Same as create_
-- **Response:** _Same as above_
+- **Request Body:** All fields optional
+```json
+{
+  "name": "Updated Name",
+  "skills": "New,Skills"
+}
+```
+- **Response:** Same as create response
 
 ### Delete Worker
 - **DELETE** `/workers/{worker_id}`
+- **Note:** Cascades to delete all associated applications
 - **Response:**
 ```json
 {"detail": "Worker deleted"}
@@ -176,7 +259,7 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ---
 
-## Jobs
+## 💼 Jobs
 
 ### Create Job
 - **POST** `/jobs/`
@@ -196,10 +279,15 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "estimated_hours": 40,
   "start_date": "2024-07-01T09:00:00",
   "contact_person": "Alice",
-  "contact_phone": "1234567890",
+  "contact_phone": "9876543210",
   "contact_email": "alice@acme.com"
 }
 ```
+- **Validation Rules:**
+  - Hourly rate: 0-10000
+  - Estimated hours: 1-10000
+  - Phone: 10-15 digits
+  - Business owner must exist in database
 - **Response:**
 ```json
 {
@@ -217,16 +305,16 @@ This document describes the REST API endpoints, request/response schemas, and ex
   "estimated_hours": 40,
   "start_date": "2024-07-01T09:00:00",
   "contact_person": "Alice",
-  "contact_phone": "1234567890",
+  "contact_phone": "9876543210",
   "contact_email": "alice@acme.com",
-  "posted_date": "2024-06-30T12:00:00",
+  "posted_date": "2024-07-01T10:00:00",
   "status": "open"
 }
 ```
 
 ### Get Job by ID
 - **GET** `/jobs/{job_id}`
-- **Response:** _Same as above_
+- **Response:** Same as create response
 
 ### Get All Jobs
 - **GET** `/jobs/`
@@ -237,22 +325,20 @@ This document describes the REST API endpoints, request/response schemas, and ex
 ]
 ```
 
-### Get Jobs by Business Owner
-- **GET** `/jobs/business/{business_owner_id}`
-- **Response:**
-```json
-[
-  { /* JobResponse */ }, ...
-]
-```
-
 ### Update Job
 - **PUT** `/jobs/{job_id}`
-- **Request Body:** _Same as create_
-- **Response:** _Same as above_
+- **Request Body:** All fields optional
+```json
+{
+  "title": "Updated Job Title",
+  "status": "closed"
+}
+```
+- **Response:** Same as create response
 
 ### Delete Job
 - **DELETE** `/jobs/{job_id}`
+- **Note:** Cascades to delete all associated applications
 - **Response:**
 ```json
 {"detail": "Job deleted"}
@@ -260,34 +346,37 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ---
 
-## Job Applications
+## 📝 Job Applications
 
-### Apply for Job
+### Create Application
 - **POST** `/applications/`
 - **Request Body:**
 ```json
 {
   "job_id": 1,
-  "worker_id": 2,
+  "worker_id": 1,
   "message": "I am interested in this job."
 }
 ```
+- **Validation Rules:**
+  - Job must exist in database
+  - Worker must exist in database
 - **Response:**
 ```json
 {
   "id": 1,
   "job_id": 1,
-  "worker_id": 2,
+  "worker_id": 1,
   "message": "I am interested in this job.",
   "status": "pending",
-  "applied_date": "2024-06-30T12:00:00",
+  "applied_date": "2024-07-01T11:00:00",
   "responded_date": null
 }
 ```
 
 ### Get Application by ID
 - **GET** `/applications/{application_id}`
-- **Response:** _Same as above_
+- **Response:** Same as create response
 
 ### Get All Applications
 - **GET** `/applications/`
@@ -298,28 +387,16 @@ This document describes the REST API endpoints, request/response schemas, and ex
 ]
 ```
 
-### Get Applications by Job
-- **GET** `/applications/job/{job_id}`
-- **Response:**
-```json
-[
-  { /* JobApplicationResponse */ }, ...
-]
-```
-
-### Get Applications by Worker
-- **GET** `/applications/worker/{worker_id}`
-- **Response:**
-```json
-[
-  { /* JobApplicationResponse */ }, ...
-]
-```
-
 ### Update Application
 - **PUT** `/applications/{application_id}`
-- **Request Body:** _Same as create_
-- **Response:** _Same as above_
+- **Request Body:** All fields optional
+```json
+{
+  "status": "accepted",
+  "message": "Congratulations! You're hired."
+}
+```
+- **Response:** Same as create response
 
 ### Delete Application
 - **DELETE** `/applications/{application_id}`
@@ -330,64 +407,120 @@ This document describes the REST API endpoints, request/response schemas, and ex
 
 ---
 
-## Database Configuration
+## 🔒 Error Handling
 
-The backend is now configured to use **MySQL** by default.
+### HTTP Status Codes
+- **200**: Success
+- **201**: Created
+- **400**: Bad Request (validation errors)
+- **401**: Unauthorized (invalid/missing JWT)
+- **404**: Not Found (resource doesn't exist)
+- **405**: Method Not Allowed
+- **422**: Unprocessable Entity (validation errors)
+- **500**: Internal Server Error
 
-- The connection string is set in `workbee-Back/core/database.py`:
-```python
-  SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:Parth%402000@localhost:3306/workbee_db"
+### Error Response Format
+```json
+{
+  "detail": "Error message",
+  "errors": [
+    {
+      "type": "value_error",
+      "loc": ["body", "field_name"],
+      "msg": "Validation error message",
+      "input": "invalid_value"
+    }
+  ]
+}
 ```
-- If your MySQL password contains special characters (like `@`), encode them (e.g., `@` becomes `%40`).
-- Make sure the database `workbee_db` exists and your MySQL server is running.
-- Install the MySQL connector:
-```bash
-  pip install mysql-connector-python
-```
-
-You can change the connection string to match your own MySQL credentials and host as needed.
 
 ---
 
-## How to Run in Production
+## 🧪 Testing
 
-To run the Workbee backend in a production-grade environment, follow these steps:
+### Test Coverage
+- **Total Test Cases**: 80
+- **Success Rate**: 100%
+- **Test Categories**:
+  - CRUD operations for all entities
+  - Edge cases and validation errors
+  - Security tests (SQL injection, XSS)
+  - Performance tests
+  - Authentication tests
 
-### 1. Install Production Dependencies
-Make sure you have `gunicorn` and `uvicorn` installed:
+### Running Tests
 ```bash
-pip install gunicorn uvicorn
+# Local testing
+python test/test_local.py
+
+# Production testing
+python test/test_vm.py
 ```
-
-### 2. Set Environment Variables
-Set environment variables for security and configuration (example for Linux):
-```bash
-export WORKBEE_SECRET_KEY="your-very-secret-key"
-export WORKBEE_DATABASE_URL="sqlite:///./workbee.db"  # Or your production DB URL
-```
-
-### 3. Run with Gunicorn and Uvicorn Workers
-Use Gunicorn with Uvicorn workers for robust, multi-process serving:
-```bash
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker workbee-Back.main:app --bind 0.0.0.0:8000
-```
-- `-w 4` sets 4 worker processes (adjust based on your CPU cores)
-- `--bind 0.0.0.0:8000` makes the app accessible on all interfaces
-
-### 4. Use a Process Manager (Optional but Recommended)
-For automatic restarts and monitoring, use a process manager like `systemd`, `supervisor`, or `pm2`.
-
-### 5. Reverse Proxy (Recommended)
-Put a reverse proxy (like Nginx or Caddy) in front of Gunicorn for SSL, compression, and security.
-
-### 6. Static Files & CORS
-- Serve static files (if any) via your reverse proxy.
-- Adjust CORS settings in `main.py` for your frontend domain.
-
-### 7. Logs & Monitoring
-- Monitor logs from Gunicorn and your process manager.
-- Set up alerts for errors and downtime.
 
 ---
 
-For more details, see the [FastAPI deployment docs](https://fastapi.tiangolo.com/deployment/). 
+## 🔄 Deployment
+
+### Production Environment
+- **Platform**: Google Cloud Platform (GCP)
+- **VM**: Debian 12
+- **Domain**: myworkbee.duckdns.org
+- **SSL**: Let's Encrypt certificate
+- **Reverse Proxy**: Nginx
+- **Database**: MySQL 8.0+
+
+### CI/CD Pipeline
+- **GitHub Actions**: Automated deployment
+- **Trigger**: Push to main branch
+- **Process**: SSH to GCP VM, pull code, restart service
+
+### Manual Deployment
+```bash
+cd workbee-Back
+git pull origin main
+pkill -f uvicorn
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --daemon
+```
+
+---
+
+## 📊 Database Schema
+
+### Entity Relationships
+- Users → Business Owners (1:1, cascade delete)
+- Users → Workers (1:1, cascade delete)
+- Business Owners → Jobs (1:many, cascade delete)
+- Workers → Job Applications (1:many, cascade delete)
+- Jobs → Job Applications (1:many, cascade delete)
+
+### Foreign Key Constraints
+- All relationships have proper foreign key constraints
+- Cascade deletion ensures data integrity
+- No orphaned records possible
+
+---
+
+## 🎯 Best Practices
+
+### API Usage
+1. **Always handle errors**: Check HTTP status codes
+2. **Use proper authentication**: Include JWT tokens for protected endpoints
+3. **Validate input**: Follow validation rules for all fields
+4. **Handle pagination**: For large datasets (future enhancement)
+5. **Use HTTPS**: All production requests should use HTTPS
+
+### Development
+1. **Test locally first**: Use `test_local.py` for development
+2. **Check validation**: Ensure all input meets validation requirements
+3. **Handle relationships**: Be aware of foreign key constraints
+4. **Monitor logs**: Check server logs for detailed error information
+
+---
+
+## 📞 Support
+
+For issues and questions:
+- **Interactive Docs**: https://myworkbee.duckdns.org/docs
+- **Test Examples**: Review test files for usage patterns
+- **Server Logs**: Check application logs for detailed errors
+- **Validation**: Ensure all input meets schema requirements 

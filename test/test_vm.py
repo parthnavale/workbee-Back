@@ -13,7 +13,7 @@ import urllib3
 # Disable SSL warnings for self-signed certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-BASE_URL = "https://workbee.duckdns.org"  # <-- Your VM's domain with HTTPS
+BASE_URL = "https://myworkbee.duckdns.org"  # <-- Your VM's domain with HTTPS
 
 # Test result tracking
 test_results = {
@@ -171,7 +171,7 @@ def test_business_owner_crud():
         "user_id": user_id,
         "business_name": f"Biz_{rand_str()}",
         "contact_person": "Owner Name",
-        "contact_phone": "1234567890",
+        "contact_phone": "9876543210",
         "contact_email": user_email,
         "address": "123 Main St",
         "website": "https://biz.com",
@@ -302,7 +302,7 @@ def test_job_crud():
         "user_id": user_id,
         "business_name": f"JobBiz_{rand_str()}",
         "contact_person": "Job Owner",
-        "contact_phone": "1234567890",
+        "contact_phone": "9876543210",
         "contact_email": user_email,
         "address": "789 Main St",
         "website": "https://jobbiz.com",
@@ -330,7 +330,7 @@ def test_job_crud():
         "estimated_hours": 10,
         "start_date": "2024-08-15T09:00:00",
         "contact_person": "Job Owner",
-        "contact_phone": "1234567890",
+        "contact_phone": "9876543210",
         "contact_email": user_email
     }
     resp = session.post(f"{BASE_URL}/jobs/", json=job_data)
@@ -394,7 +394,7 @@ def test_application_crud():
     worker_data = {
         "user_id": worker_user_id,
         "name": "App Worker",
-        "phone": "5555555555",
+        "phone": "9876543210",
         "email": worker_email,
         "skills": "Python,FastAPI",
         "years_of_experience": 1,
@@ -422,7 +422,7 @@ def test_application_crud():
         "user_id": bo_user_id,
         "business_name": f"AppBO_{rand_str()}",
         "contact_person": "App BO",
-        "contact_phone": "1111111111",
+        "contact_phone": "9876543210",
         "contact_email": bo_email,
         "address": "BO St",
         "website": "https://appbo.com",
@@ -449,7 +449,7 @@ def test_application_crud():
         "estimated_hours": 5,
         "start_date": "2024-08-15T09:00:00",
         "contact_person": "App BO",
-        "contact_phone": "1111111111",
+        "contact_phone": "9876543210",
         "contact_email": bo_email
     }
     resp = session.post(f"{BASE_URL}/jobs/", json=job_data)
