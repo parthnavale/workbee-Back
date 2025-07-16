@@ -21,7 +21,7 @@ jobs:
 
     - name: Deploy to VM
       run: |
-        ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} '
+        ssh -i ~/.ssh/id_ed25519 ${{ secrets.VM_USER }}@35.223.138.152 '
           cd ~/workbee-Back &&
           git pull origin main &&
           sudo systemctl restart fastapi

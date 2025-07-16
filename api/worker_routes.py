@@ -23,7 +23,20 @@ def create_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"User {worker.user_id} already has a worker profile")
     
     try:
-        db_worker = Worker(**worker.dict())
+        db_worker = Worker(
+            user_id=worker.user_id,
+            name=worker.name,
+            phone=worker.phone,
+            email=worker.email,
+            skills=worker.skills,
+            years_of_experience=worker.years_of_experience,
+            address=worker.address,
+            state=worker.state,
+            city=worker.city,
+            pincode=worker.pincode,
+            latitude=worker.latitude,
+            longitude=worker.longitude
+        )
         db.add(db_worker)
         db.commit()
         db.refresh(db_worker)

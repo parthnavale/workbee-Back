@@ -25,10 +25,10 @@ class UserCreate(BaseModel):
     def validate_password(cls, v):
         if not v:
             raise ValueError('Password cannot be empty')
-        if len(v) > 1000:  # Reasonable limit for password length
-            raise ValueError('Password is too long')
-        if len(v) < 6:
-            raise ValueError('Password must be at least 6 characters')
+        if len(v) != 6:
+            raise ValueError('PIN must be exactly 6 digits')
+        if not v.isdigit():
+            raise ValueError('PIN must contain only digits')
         return v
     
     @validator('role')
@@ -64,10 +64,10 @@ class UserUpdate(BaseModel):
     def validate_password(cls, v):
         if v is None:
             return v
-        if len(v) > 1000:  # Reasonable limit for password length
-            raise ValueError('Password is too long')
-        if len(v) < 6:
-            raise ValueError('Password must be at least 6 characters')
+        if len(v) != 6:
+            raise ValueError('PIN must be exactly 6 digits')
+        if not v.isdigit():
+            raise ValueError('PIN must contain only digits')
         return v
     
     @validator('role')
@@ -90,8 +90,10 @@ class UserLogin(BaseModel):
     def validate_password(cls, v):
         if not v:
             raise ValueError('Password cannot be empty')
-        if len(v) > 1000:
-            raise ValueError('Password is too long')
+        if len(v) != 6:
+            raise ValueError('PIN must be exactly 6 digits')
+        if not v.isdigit():
+            raise ValueError('PIN must contain only digits')
         return v
     
     class Config:
@@ -100,7 +102,7 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: EmailStr
+    email: str
     role: str
     
     class Config:

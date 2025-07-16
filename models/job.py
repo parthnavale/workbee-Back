@@ -21,4 +21,6 @@ class Job(Base):
     status = Column(String(20), default="open")
     contact_person = Column(String(100))
     contact_phone = Column(String(20))
-    contact_email = Column(String(100)) 
+    contact_email = Column(String(100))
+    latitude = Column(Float)
+    longitude = Column(Float) 

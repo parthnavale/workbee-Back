@@ -7,6 +7,11 @@ from models.job import Job
 from models.business_owner import BusinessOwner
 from models.job_application import JobApplication
 from datetime import datetime
+import h3
+from sqlalchemy import and_
+from models.worker import Worker
+from models.notification import Notification
+from schemas.notification_schemas import NotificationCreate
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -22,6 +27,30 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
         db.add(db_job)
         db.commit()
         db.refresh(db_job)
+
+        # --- H3 Geospatial Notification Logic ---
+        if db_job.latitude is not None and db_job.longitude is not None:
+            h3_resolution = 8  # Reasonable for city/neighborhood
+            job_h3 = h3.latlng_to_cell(db_job.latitude, db_job.longitude, h3_resolution)
+            workers = db.query(Worker).filter(and_(Worker.latitude != None, Worker.longitude != None)).all()
+            neighbor_cells = set(h3.grid_disk(job_h3, 1))
+            notify_worker_ids = []
+            for worker in workers:
+                worker_h3 = h3.latlng_to_cell(worker.latitude, worker.longitude, h3_resolution)
+                if worker_h3 in neighbor_cells:
+                    notify_worker_ids.append(worker.id)
+                    # Create notification for this worker
+                    notification = Notification(
+                        worker_id=worker.id,
+                        job_id=db_job.id,
+                        message=f"New job nearby: {db_job.title}",
+                        is_read=False
+                    )
+                    db.add(notification)
+            db.commit()
+            print(f"[H3] Notifying workers: {notify_worker_ids} for job {db_job.id}")
+        # --- End H3 logic ---
+
         return db_job
     except IntegrityError as e:
         db.rollback()

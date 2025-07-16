@@ -13,10 +13,10 @@ router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
-# Dummy user for demonstration
+# Update fake_user to use a 6-digit PIN
 fake_user = {
     "username": "testuser",
-    "hashed_password": pwd_context.hash("testpassword")
+    "hashed_password": pwd_context.hash("123456")
 }
 
 def verify_password(plain_password, hashed_password):

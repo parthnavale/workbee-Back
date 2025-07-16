@@ -13,7 +13,9 @@ class WorkerCreate(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     pincode: Optional[str] = None
-    
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
     @validator('phone')
     def validate_phone(cls, v):
         if v is None:
@@ -24,7 +26,7 @@ class WorkerCreate(BaseModel):
         if len(digits_only) < 10 or len(digits_only) > 15:
             raise ValueError('Phone number must be 10-15 digits')
         return v
-    
+
     @validator('years_of_experience')
     def validate_experience(cls, v):
         if v is None:
@@ -32,7 +34,23 @@ class WorkerCreate(BaseModel):
         if v < 0 or v > 100:
             raise ValueError('Years of experience must be between 0 and 100')
         return v
-    
+
+    @validator('latitude')
+    def validate_latitude(cls, v):
+        if v is None:
+            return v
+        if v < -90 or v > 90:
+            raise ValueError('Latitude must be between -90 and 90')
+        return v
+
+    @validator('longitude')
+    def validate_longitude(cls, v):
+        if v is None:
+            return v
+        if v < -180 or v > 180:
+            raise ValueError('Longitude must be between -180 and 180')
+        return v
+
     class Config:
         extra = "ignore"
 
@@ -46,7 +64,9 @@ class WorkerUpdate(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     pincode: Optional[str] = None
-    
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
     @validator('phone')
     def validate_phone(cls, v):
         if v is None:
@@ -57,7 +77,7 @@ class WorkerUpdate(BaseModel):
         if len(digits_only) < 10 or len(digits_only) > 15:
             raise ValueError('Phone number must be 10-15 digits')
         return v
-    
+
     @validator('years_of_experience')
     def validate_experience(cls, v):
         if v is None:
@@ -65,7 +85,23 @@ class WorkerUpdate(BaseModel):
         if v < 0 or v > 100:
             raise ValueError('Years of experience must be between 0 and 100')
         return v
-    
+
+    @validator('latitude')
+    def validate_latitude(cls, v):
+        if v is None:
+            return v
+        if v < -90 or v > 90:
+            raise ValueError('Latitude must be between -90 and 90')
+        return v
+
+    @validator('longitude')
+    def validate_longitude(cls, v):
+        if v is None:
+            return v
+        if v < -180 or v > 180:
+            raise ValueError('Longitude must be between -180 and 180')
+        return v
+
     class Config:
         extra = "ignore"
 
@@ -81,6 +117,8 @@ class WorkerResponse(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     pincode: Optional[str] = None
-    
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
     class Config:
         from_attributes = True 

@@ -113,7 +113,7 @@ def test_user_crud():
     user_data = {
         "username": f"user_{rand_str()}",
         "email": user_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -129,7 +129,7 @@ def test_user_crud():
     resp = session.post(f"{BASE_URL}/users/register", json={"username": "abc"})
     print_result("Create User (missing fields)", resp, 422)
     # Login (valid)
-    login_data = {"email": user_email, "password": "TestPass123!"}
+    login_data = {"email": user_email, "password": "123456"}
     resp = session.post(f"{BASE_URL}/users/login", json=login_data)
     print_result("User Login (valid)", resp, 200)
     token = None
@@ -160,7 +160,7 @@ def test_business_owner_crud():
     user_data = {
         "username": f"bo_{rand_str()}",
         "email": user_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -227,7 +227,7 @@ def test_worker_crud():
     user_data = {
         "username": f"worker_{rand_str()}",
         "email": user_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "seeker"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -292,7 +292,7 @@ def test_job_crud():
     user_data = {
         "username": f"jobbo_{rand_str()}",
         "email": user_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -385,7 +385,7 @@ def test_application_crud():
     user_data = {
         "username": f"appworker_{rand_str()}",
         "email": worker_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "seeker"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -412,7 +412,7 @@ def test_application_crud():
     bo_user_data = {
         "username": f"appbo_{rand_str()}",
         "email": bo_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=bo_user_data)
@@ -520,6 +520,106 @@ def test_application_crud():
             print_result(f"Delete User (after app deleted, id={uid})", resp, 200)
             test_data['user_ids'].remove(uid)
 
+def test_notification_api():
+    print("\n=== NOTIFICATION API & EDGE CASES ===")
+    # Create a worker with lat/lng
+    worker_email = f"notifworker_{rand_str()}@test.com"
+    user_data = {
+        "username": f"notifworker_{rand_str()}",
+        "email": worker_email,
+        "password": "123456",
+        "role": "seeker"
+    }
+    resp = session.post(f"{BASE_URL}/users/register", json=user_data)
+    worker_user_id = resp.json().get("id") if resp.status_code == 200 else None
+    worker_data = {
+        "user_id": worker_user_id,
+        "name": "Notif Worker",
+        "phone": "5555555555",
+        "email": worker_email,
+        "skills": "Python,FastAPI",
+        "years_of_experience": 1,
+        "address": "Notif St",
+        "state": "CA",
+        "city": "SF",
+        "pincode": "94105",
+        "latitude": 37.7749,
+        "longitude": -122.4194
+    }
+    resp = session.post(f"{BASE_URL}/workers/", json=worker_data)
+    worker_id = resp.json().get("id") if resp.status_code == 200 else None
+    # Create a business owner and job near the worker
+    bo_email = f"notifbo_{rand_str()}@test.com"
+    bo_user_data = {
+        "username": f"notifbo_{rand_str()}",
+        "email": bo_email,
+        "password": "123456",
+        "role": "poster"
+    }
+    resp = session.post(f"{BASE_URL}/users/register", json=bo_user_data)
+    bo_user_id = resp.json().get("id") if resp.status_code == 200 else None
+    bo_data = {
+        "user_id": bo_user_id,
+        "business_name": f"NotifBO_{rand_str()}",
+        "contact_person": "Notif BO",
+        "contact_phone": "1111111111",
+        "contact_email": bo_email,
+        "address": "BO St",
+        "website": "https://notifbo.com",
+        "industry": "Tech",
+        "state": "CA",
+        "city": "SF",
+        "pincode": "94105",
+        "year_established": 2020
+    }
+    resp = session.post(f"{BASE_URL}/business-owners/", json=bo_data)
+    bo_id = resp.json().get("id") if resp.status_code == 200 else None
+    job_data = {
+        "business_owner_id": bo_id,
+        "title": "Notif Job",
+        "description": "A job for notif test.",
+        "required_skills": "Python,FastAPI",
+        "location": "SF",
+        "address": "BO St",
+        "state": "CA",
+        "city": "SF",
+        "pincode": "94105",
+        "hourly_rate": 40.0,
+        "estimated_hours": 5,
+        "latitude": 37.7750,
+        "longitude": -122.4195,
+        "start_date": "2024-08-15T09:00:00",
+        "contact_person": "Notif BO",
+        "contact_phone": "1111111111",
+        "contact_email": bo_email
+    }
+    resp = session.post(f"{BASE_URL}/jobs/", json=job_data)
+    job_id = resp.json().get("id") if resp.status_code == 200 else None
+    # Wait a moment for notification logic
+    time.sleep(2)
+    # Fetch notifications for worker
+    resp = session.get(f"{BASE_URL}/notifications/{worker_id}")
+    print_result("Fetch Notifications (should have 1)", resp, 200)
+    notifications = resp.json() if resp.status_code == 200 else []
+    notif_id = notifications[0]['id'] if notifications else None
+    # Mark notification as read
+    if notif_id:
+        resp = session.post(f"{BASE_URL}/notifications/mark_read", json={"notification_ids": [notif_id]})
+        print_result("Mark Notification as Read", resp, 200)
+    # Edge: Fetch for non-existent worker
+    resp = session.get(f"{BASE_URL}/notifications/999999")
+    print_result("Fetch Notifications (non-existent worker)", resp, 200)
+    # Edge: Mark already-read notification
+    if notif_id:
+        resp = session.post(f"{BASE_URL}/notifications/mark_read", json={"notification_ids": [notif_id]})
+        print_result("Mark Already-Read Notification", resp, 200)
+    # Edge: Create notification with missing fields
+    resp = session.post(f"{BASE_URL}/notifications/", json={"worker_id": worker_id, "job_id": job_id})
+    print_result("Create Notification (missing message)", resp, 422)
+    # Edge: Create notification for non-existent worker/job
+    resp = session.post(f"{BASE_URL}/notifications/", json={"worker_id": 999999, "job_id": 999999, "message": "Test"})
+    print_result("Create Notification (non-existent worker/job)", resp, 400)
+
 def test_additional_edge_cases():
     print("\n=== ADDITIONAL CORNER CASES & EDGE CASES ===")
     
@@ -528,7 +628,7 @@ def test_additional_edge_cases():
     user_data_long = {
         "username": long_string,
         "email": f"long_{rand_str()}@test.com",
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data_long)
@@ -538,7 +638,7 @@ def test_additional_edge_cases():
     sql_injection_data = {
         "username": "user'; DROP TABLE users; --",
         "email": f"sql_{rand_str()}@test.com",
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=sql_injection_data)
@@ -548,7 +648,7 @@ def test_additional_edge_cases():
     xss_data = {
         "username": "<script>alert('xss')</script>",
         "email": f"xss_{rand_str()}@test.com",
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=xss_data)
@@ -566,7 +666,7 @@ def test_additional_edge_cases():
         user_data = {
             "username": f"invalid_email_{i}",
             "email": email,
-            "password": "TestPass123!",
+            "password": "123456",
             "role": "poster"
         }
         resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -580,7 +680,7 @@ def test_additional_edge_cases():
         user_data = {
             "username": f"phone_{rand_str()}",
             "email": user_email,
-            "password": "TestPass123!",
+            "password": "123456",
             "role": "poster"
         }
         resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -609,7 +709,7 @@ def test_additional_edge_cases():
     user_data = {
         "username": f"negative_{rand_str()}",
         "email": user_email,
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -639,7 +739,7 @@ def test_additional_edge_cases():
         user_data = {
             "username": f"concurrent_{rand_str()}",
             "email": email,
-            "password": "TestPass123!",
+            "password": "123456",
             "role": "poster"
         }
         resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -690,7 +790,7 @@ def test_additional_edge_cases():
         resp = session.post(f"{BASE_URL}/users/register", json={
             "username": f"rate_limit_{i}_{rand_str()}",
             "email": f"rate_limit_{i}_{rand_str()}@test.com",
-            "password": "TestPass123!",
+            "password": "123456",
             "role": "poster"
         })
         if resp.status_code != 200:
@@ -701,7 +801,7 @@ def test_additional_edge_cases():
     large_payload = {
         "username": "large_user",
         "email": f"large_{rand_str()}@test.com",
-        "password": "TestPass123!" * 1000,  # Very large password
+        "password": "123456" * 1000,  # Very large password
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=large_payload)
@@ -711,7 +811,7 @@ def test_additional_edge_cases():
     special_chars_data = {
         "username": "user!@#$%^&*()_+-=[]{}|;':\",./<>?",
         "email": f"special_{rand_str()}@test.com",
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=special_chars_data)
@@ -723,7 +823,7 @@ def test_additional_edge_cases():
     unicode_data = {
         "username": "user_🚀_🌟_🎉",
         "email": f"unicode_{rand_str()}@test.com",
-        "password": "TestPass123!",
+        "password": "123456",
         "role": "poster"
     }
     resp = session.post(f"{BASE_URL}/users/register", json=unicode_data)
@@ -740,7 +840,7 @@ def test_performance_edge_cases():
         user_data = {
             "username": f"perf_{i}_{rand_str()}",
             "email": f"perf_{i}_{rand_str()}@test.com",
-            "password": "TestPass123!",
+            "password": "123456",
             "role": "poster"
         }
         resp = session.post(f"{BASE_URL}/users/register", json=user_data)
@@ -774,6 +874,7 @@ def main():
     test_worker_crud()
     test_job_crud()
     test_application_crud()
+    test_notification_api()
     test_additional_edge_cases()
     test_performance_edge_cases()
     display_summary()

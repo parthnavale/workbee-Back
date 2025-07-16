@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from core.database import Base
 
 class Worker(Base):
@@ -13,4 +13,6 @@ class Worker(Base):
     address = Column(String(200))
     state = Column(String(50))
     city = Column(String(50))
-    pincode = Column(String(20)) 
+    pincode = Column(String(20))
+    latitude = Column(Float)
+    longitude = Column(Float) 
