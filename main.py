@@ -10,7 +10,7 @@ from models.business_owner import BusinessOwner
 from models.worker import Worker
 from models.job import Job
 from models.job_application import JobApplication
-from api import user_routes, business_owner_routes, worker_routes, job_routes, application_routes, notification_routes
+from api import user_routes, business_owner_routes, worker_routes, job_routes, application_routes, notification_routes, notification_ws
 from api.auth import router as auth_router
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import text
@@ -168,4 +168,5 @@ app.include_router(worker_routes.router)
 app.include_router(job_routes.router)
 app.include_router(application_routes.router) 
 app.include_router(notification_routes.router)
+app.include_router(notification_ws.router)
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"]) 

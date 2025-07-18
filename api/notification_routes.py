@@ -5,6 +5,9 @@ from core.database import get_db
 from models.notification import Notification
 from schemas.notification_schemas import NotificationCreate, NotificationResponse, NotificationMarkRead
 from datetime import datetime
+from fastapi import APIRouter
+from api.notification_ws import send_notification_to_worker
+import asyncio
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -31,4 +34,10 @@ def create_notification(notification: NotificationCreate, db: Session = Depends(
 def mark_notifications_read(payload: NotificationMarkRead, db: Session = Depends(get_db)):
     updated = db.query(Notification).filter(Notification.id.in_(payload.notification_ids)).update({Notification.is_read: True}, synchronize_session=False)
     db.commit()
-    return {"updated": updated} 
+    return {"updated": updated}
+
+@router.post("/test_ws/{worker_id}")
+async def test_ws_notification(worker_id: int, message: str = "Test notification!"):
+    # Send a test notification to the worker via WebSocket
+    asyncio.create_task(send_notification_to_worker(worker_id, message))
+    return {"success": True, "message": f"Notification sent to worker {worker_id}"} 
