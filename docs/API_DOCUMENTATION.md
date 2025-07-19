@@ -2,9 +2,10 @@
 
 **Production URL**: https://myworkbee.duckdns.org  
 **Interactive Docs**: https://myworkbee.duckdns.org/docs  
+**WebSocket**: wss://myworkbee.duckdns.org/ws/notifications/{user_id}  
 **Test Coverage**: 100% (80 test cases)  
 
-This document describes the REST API endpoints, request/response schemas, validation rules, and example payloads for the Workbee job marketplace backend.
+This document describes the REST API endpoints, WebSocket connections, request/response schemas, validation rules, and example payloads for the Workbee job marketplace backend.
 
 ---
 
@@ -12,6 +13,7 @@ This document describes the REST API endpoints, request/response schemas, valida
 
 ✅ **Fully Deployed**: Running on GCP VM with HTTPS  
 ✅ **Domain**: https://myworkbee.duckdns.org  
+✅ **WebSocket**: Real-time notifications via WSS  
 ✅ **SSL Certificate**: Let's Encrypt (auto-renewal)  
 ✅ **Database**: MySQL with foreign key constraints  
 ✅ **Test Coverage**: 100% success rate  
@@ -67,6 +69,73 @@ This document describes the REST API endpoints, request/response schemas, valida
 - **GET** `/users/me`
 - **Headers:** `Authorization: Bearer <JWT_TOKEN>`
 - **Response:** Same as register response
+
+---
+
+## 🔌 Real-time Notifications (WebSocket)
+
+### WebSocket Connection
+- **URL**: `wss://myworkbee.duckdns.org/ws/notifications/{user_id}`
+- **Protocol**: WebSocket Secure (WSS)
+- **Authentication**: User ID in URL path
+
+### Connection Example
+```javascript
+// Connect to WebSocket for real-time notifications
+const userId = 123; // Worker or Business Owner ID
+const ws = new WebSocket(`wss://myworkbee.duckdns.org/ws/notifications/${userId}`);
+
+// Handle incoming messages
+ws.onmessage = function(event) {
+    const notification = JSON.parse(event.data);
+    console.log('New notification:', notification);
+    
+    // Handle different notification types
+    switch(notification.type) {
+        case 'new_application':
+            // New job application received
+            break;
+        case 'application_status':
+            // Application status updated
+            break;
+        case 'job_update':
+            // Job details updated
+            break;
+    }
+};
+
+// Handle connection events
+ws.onopen = function() {
+    console.log('WebSocket connected');
+};
+
+ws.onclose = function() {
+    console.log('WebSocket disconnected');
+};
+
+ws.onerror = function(error) {
+    console.error('WebSocket error:', error);
+};
+```
+
+### Notification Types
+- **New Application**: Sent to business owners when workers apply for jobs
+- **Application Status**: Sent to workers when applications are accepted/rejected
+- **Job Updates**: Real-time updates for job status changes
+
+### Notification Format
+```json
+{
+  "type": "new_application",
+  "message": "New application received for 'Cashier Position'",
+  "data": {
+    "job_id": 123,
+    "application_id": 456,
+    "worker_name": "John Doe",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
 
 ---
 

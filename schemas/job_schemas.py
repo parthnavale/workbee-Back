@@ -19,6 +19,8 @@ class JobCreate(BaseModel):
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     @validator('hourly_rate')
     def validate_hourly_rate(cls, v):
@@ -69,6 +71,8 @@ class JobResponse(BaseModel):
     contact_email: Optional[str] = None
     posted_date: datetime
     status: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     class Config:
         from_attributes = True
@@ -90,6 +94,8 @@ class JobUpdate(BaseModel):
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
     status: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     
     @validator('hourly_rate')
     def validate_hourly_rate(cls, v):
