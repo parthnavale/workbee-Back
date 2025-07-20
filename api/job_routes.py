@@ -12,6 +12,8 @@ from sqlalchemy import and_
 from models.worker import Worker
 from models.notification import Notification
 from schemas.notification_schemas import NotificationCreate
+import asyncio
+from api.notification_ws import send_notification_to_worker
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -47,6 +49,16 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
                         is_read=False
                     )
                     db.add(notification)
+                    # Send real-time WebSocket notification
+                    asyncio.create_task(send_notification_to_worker(
+                        worker.id,
+                        {
+                            "job_id": db_job.id,
+                            "message": f"New job nearby: {db_job.title}",
+                            "is_read": False,
+                            "created_at": datetime.utcnow().isoformat()
+                        }
+                    ))
             db.commit()
             print(f"[H3] Notifying workers: {notify_worker_ids} for job {db_job.id}")
         # --- End H3 logic ---
