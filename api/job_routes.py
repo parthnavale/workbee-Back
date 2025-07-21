@@ -14,6 +14,7 @@ from models.notification import Notification
 from schemas.notification_schemas import NotificationCreate
 import asyncio
 from api.notification_ws import send_notification_to_worker
+from core.fcm import send_fcm_notification
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -59,6 +60,14 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
                             "created_at": datetime.utcnow().isoformat()
                         }
                     ))
+                    # Send FCM push notification if token is available
+                    if getattr(worker, 'fcm_token', None):
+                        send_fcm_notification(
+                            worker.fcm_token,
+                            title="New Job Nearby!",
+                            body=f"New job: {db_job.title}",
+                            data={"job_id": db_job.id}
+                        )
             db.commit()
             print(f"[H3] Notifying workers: {notify_worker_ids} for job {db_job.id}")
         # --- End H3 logic ---
