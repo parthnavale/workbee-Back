@@ -35,7 +35,8 @@ def create_worker(worker: WorkerCreate, db: Session = Depends(get_db)):
             city=worker.city,
             pincode=worker.pincode,
             latitude=worker.latitude,
-            longitude=worker.longitude
+            longitude=worker.longitude,
+            fcm_token=worker.fcm_token
         )
         db.add(db_worker)
         db.commit()
@@ -71,6 +72,16 @@ def update_worker(worker_id: int, worker_update: WorkerUpdate, db: Session = Dep
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail="Invalid data provided")
+
+@router.put("/{worker_id}/fcm-token")
+def update_fcm_token(worker_id: int, fcm_token: str, db: Session = Depends(get_db)):
+    worker = db.query(Worker).filter(Worker.id == worker_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    worker.fcm_token = fcm_token
+    db.commit()
+    db.refresh(worker)
+    return {"success": True, "worker_id": worker_id, "fcm_token": fcm_token}
 
 @router.delete("/{worker_id}")
 def delete_worker(worker_id: int, db: Session = Depends(get_db)):

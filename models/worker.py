@@ -15,4 +15,5 @@ class Worker(Base):
     city = Column(String(50))
     pincode = Column(String(20))
     latitude = Column(Float)
-    longitude = Column(Float) 
+    longitude = Column(Float)
+    fcm_token = Column(String(256), nullable=True) 

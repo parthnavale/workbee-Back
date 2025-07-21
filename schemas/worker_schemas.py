@@ -15,6 +15,7 @@ class WorkerCreate(BaseModel):
     pincode: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    fcm_token: Optional[str] = None
 
     @validator('phone')
     def validate_phone(cls, v):
@@ -66,6 +67,7 @@ class WorkerUpdate(BaseModel):
     pincode: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    fcm_token: Optional[str] = None
 
     @validator('phone')
     def validate_phone(cls, v):
@@ -119,6 +121,7 @@ class WorkerResponse(BaseModel):
     pincode: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    fcm_token: Optional[str] = None
 
     class Config:
         from_attributes = True 
