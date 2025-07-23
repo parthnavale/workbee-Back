@@ -8,6 +8,8 @@ from datetime import datetime
 from fastapi import APIRouter
 from api.notification_ws import send_notification_to_worker
 import asyncio
+from core.fcm import send_fcm_notification
+import models.notification
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -40,4 +42,12 @@ def mark_notifications_read(payload: NotificationMarkRead, db: Session = Depends
 async def test_ws_notification(worker_id: int, message: str = "Test notification!"):
     # Send a test notification to the worker via WebSocket
     asyncio.create_task(send_notification_to_worker(worker_id, message))
-    return {"success": True, "message": f"Notification sent to worker {worker_id}"} 
+    return {"success": True, "message": f"Notification sent to worker {worker_id}"}
+
+@router.post("/force_fcm/{worker_id}")
+def force_fcm_notification(worker_id: int, title: str = "Test FCM", body: str = "This is a forced FCM notification", db: Session = Depends(get_db)):
+    worker = db.query(models.notification.Worker).filter_by(id=worker_id).first()
+    if not worker or not worker.fcm_token:
+        raise HTTPException(status_code=404, detail="Worker or FCM token not found")
+    result = send_fcm_notification(worker.fcm_token, title, body)
+    return {"success": result is not None, "worker_id": worker_id, "fcm_token": worker.fcm_token, "title": title, "body": body} 

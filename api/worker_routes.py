@@ -83,6 +83,13 @@ def update_fcm_token(worker_id: int, fcm_token: str, db: Session = Depends(get_d
     db.refresh(worker)
     return {"success": True, "worker_id": worker_id, "fcm_token": fcm_token}
 
+@router.get("/{worker_id}/fcm-token")
+def get_worker_fcm_token(worker_id: int, db: Session = Depends(get_db)):
+    worker = db.query(Worker).filter(Worker.id == worker_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    return {"worker_id": worker_id, "fcm_token": worker.fcm_token}
+
 @router.delete("/{worker_id}")
 def delete_worker(worker_id: int, db: Session = Depends(get_db)):
     """Delete worker and all associated job applications"""
