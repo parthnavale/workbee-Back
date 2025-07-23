@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from core.database import get_db
 from models.notification import Notification
+from models.worker import Worker
 from schemas.notification_schemas import NotificationCreate, NotificationResponse, NotificationMarkRead
 from datetime import datetime
 from fastapi import APIRouter
@@ -46,7 +47,7 @@ async def test_ws_notification(worker_id: int, message: str = "Test notification
 
 @router.post("/force_fcm/{worker_id}")
 def force_fcm_notification(worker_id: int, title: str = "Test FCM", body: str = "This is a forced FCM notification", db: Session = Depends(get_db)):
-    worker = db.query(models.notification.Worker).filter_by(id=worker_id).first()
+    worker = db.query(Worker).filter_by(id=worker_id).first()
     if not worker or not worker.fcm_token:
         raise HTTPException(status_code=404, detail="Worker or FCM token not found")
     result = send_fcm_notification(worker.fcm_token, title, body)
