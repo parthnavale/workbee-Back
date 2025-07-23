@@ -51,4 +51,8 @@ def force_fcm_notification(worker_id: int, title: str = "Test FCM", body: str = 
     if not worker or not worker.fcm_token:
         raise HTTPException(status_code=404, detail="Worker or FCM token not found")
     result = send_fcm_notification(worker.fcm_token, title, body)
-    return {"success": result is not None, "worker_id": worker_id, "fcm_token": worker.fcm_token, "title": title, "body": body} 
+    success = result is not None and not isinstance(result, str)
+    response = {"success": success, "worker_id": worker_id, "fcm_token": worker.fcm_token, "title": title, "body": body}
+    if not success:
+        response["fcm_error"] = result
+    return response 

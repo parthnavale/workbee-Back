@@ -27,4 +27,4 @@ def send_fcm_notification(token, title, body, data=None):
         return response
     except Exception as e:
         logging.error(f"[FCM] Error sending notification: {e}")
-        return None 
+        return str(e) 
