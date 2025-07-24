@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from schemas.job_schemas import JobCreate, JobResponse, JobUpdate
@@ -19,7 +19,7 @@ from core.fcm import send_fcm_notification
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.post("/", response_model=JobResponse)
-def create_job(job: JobCreate, db: Session = Depends(get_db)):
+def create_job(job: JobCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     # Check if business owner exists
     business_owner = db.query(BusinessOwner).filter(BusinessOwner.id == job.business_owner_id).first()
     if not business_owner:
@@ -51,15 +51,13 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
                     )
                     db.add(notification)
                     # Send real-time WebSocket notification
-                    asyncio.create_task(send_notification_to_worker(
-                        worker.id,
-                        {
+                    if background_tasks is not None:
+                        background_tasks.add_task(send_notification_to_worker, worker.id, {
                             "job_id": db_job.id,
                             "message": f"New job nearby: {db_job.title}",
                             "is_read": False,
                             "created_at": datetime.utcnow().isoformat()
-                        }
-                    ))
+                        })
                     # Send FCM push notification if token is available
                     if getattr(worker, 'fcm_token', None):
                         send_fcm_notification(
