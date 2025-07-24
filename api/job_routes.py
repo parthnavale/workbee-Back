@@ -64,7 +64,7 @@ def create_job(job: JobCreate, db: Session = Depends(get_db), background_tasks: 
                             worker.fcm_token,
                             title="New Job Nearby!",
                             body=f"New job: {db_job.title}",
-                            data={"job_id": db_job.id}
+                            data={"job_id": str(db_job.id)}
                         )
             db.commit()
             print(f"[H3] Notifying workers: {notify_worker_ids} for job {db_job.id}")
