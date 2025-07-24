@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from schemas.job_schemas import JobCreate, JobResponse, JobUpdate
@@ -134,3 +134,23 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
         "deleted_applications_count": len(applications),
         "deleted_at": datetime.utcnow().isoformat()
     } 
+
+@router.get("/nearby", response_model=list[JobResponse])
+def get_nearby_jobs(
+    lat: float = Query(..., description="Latitude of worker location"),
+    lng: float = Query(..., description="Longitude of worker location"),
+    radius_km: int = Query(10, description="Search radius in kilometers"),
+    db: Session = Depends(get_db)
+):
+    h3_resolution = 8  # Reasonable for city/neighborhood
+    origin_cell = h3.latlng_to_cell(lat, lng, h3_resolution)
+    # Approximate number of rings for the radius (each ring ~1km at res 8)
+    num_rings = max(1, int(radius_km))
+    nearby_cells = set(h3.grid_disk(origin_cell, num_rings))
+    jobs = db.query(Job).filter(Job.latitude != None, Job.longitude != None).all()
+    nearby_jobs = []
+    for job in jobs:
+        job_cell = h3.latlng_to_cell(job.latitude, job.longitude, h3_resolution)
+        if job_cell in nearby_cells:
+            nearby_jobs.append(job)
+    return nearby_jobs 
