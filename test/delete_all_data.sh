@@ -32,6 +32,7 @@ echo "Starting data deletion process..."
 
 delete_all "applications"
 delete_all "jobs"
+delete_all "notifications"
 delete_all "business-owners"
 delete_all "workers"
 delete_all "users"
