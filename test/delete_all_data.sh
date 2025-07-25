@@ -15,26 +15,25 @@ delete_all() {
   # Fetch all items and extract their IDs
   ids=$(curl -s -H "$AUTH_HEADER" "$BASE_URL/$endpoint/" | grep -o '"id":[0-9]*' | cut -d: -f2)
   for id in $ids; do
-    echo "Deleting $endpoint/$id"
-    curl -s -X DELETE -H "$AUTH_HEADER" "$BASE_URL/$endpoint/$id"
+    url="$BASE_URL/$endpoint/$id"
+    echo "-----------------------------"
+    echo "[REQUEST] DELETE $url"
+    echo "Request body: (none)"
+    response=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" -X DELETE -H "$AUTH_HEADER" "$url")
+    body=$(echo "$response" | sed -e '/HTTP_STATUS:/d')
+    status=$(echo "$response" | grep HTTP_STATUS | cut -d':' -f2)
+    echo "[RESPONSE] Status code: $status"
+    echo "[RESPONSE] Body: $body"
+    echo "-----------------------------"
   done
 }
 
 echo "Starting data deletion process..."
 
-# 1. Delete all job applications
 delete_all "applications"
-
-# 2. Delete all jobs
 delete_all "jobs"
-
-# 3. Delete all business owners
 delete_all "business-owners"
-
-# 4. Delete all workers
 delete_all "workers"
-
-# 5. Delete all users
 delete_all "users"
 
 echo "Data deletion complete." 
