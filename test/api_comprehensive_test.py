@@ -177,6 +177,15 @@ def main():
         resp = session.delete(f"{BASE_URL}/applications/{created['application_id']}")
         record_result("Delete Application (Cleanup)", resp, 200)
 
+    # --- NEW: Delete notifications for the worker before deleting job/worker/owner ---
+    notif_ids = []
+    resp = session.get(f"{BASE_URL}/notifications/{created['worker_id']}")
+    if resp.ok:
+        notif_ids = [n.get("id") for n in resp.json()]
+        for notif_id in notif_ids:
+            del_resp = session.delete(f"{BASE_URL}/notifications/id/{notif_id}")
+            record_result(f"Delete Notification {notif_id} (Cleanup)", del_resp, 200)
+
     # 20. Cleanup: delete job
     if created.get("job_id"):
         resp = session.delete(f"{BASE_URL}/jobs/{created['job_id']}")
