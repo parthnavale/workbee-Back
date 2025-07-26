@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from schemas.job_schemas import JobCreate, JobResponse, JobUpdate
@@ -152,3 +152,11 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
         "deleted_applications_count": len(applications),
         "deleted_at": datetime.utcnow().isoformat()
     } 
+
+@router.post("/batch", response_model=list[JobResponse])
+def get_jobs_by_ids(
+    job_ids: list[int] = Body(..., embed=True, description="List of job IDs to fetch"),
+    db: Session = Depends(get_db)
+):
+    jobs = db.query(Job).filter(Job.id.in_(job_ids)).all()
+    return jobs 
