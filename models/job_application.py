@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
 from core.database import Base
 from datetime import datetime
 
@@ -10,4 +10,9 @@ class JobApplication(Base):
     status = Column(String(20), default="pending")
     applied_date = Column(DateTime, default=datetime.utcnow)
     responded_date = Column(DateTime)
-    message = Column(String(500)) 
+    message = Column(String(500))
+    
+    # Add unique constraint to prevent duplicate applications
+    __table_args__ = (
+        UniqueConstraint('job_id', 'worker_id', name='unique_job_worker_application'),
+    ) 

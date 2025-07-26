@@ -1,0 +1,349 @@
+
+=== Register Worker User ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "testworker_1753461280", "email": "testworker_1753461280@example.com", "password": "123456", "role": "seeker"}'
+Status Code: 200
+Response: {"id":7,"username":"testworker_1753461280","email":"testworker_1753461280@example.com","role":"seeker"}
+------------------------------------------------------------
+
+=== Register Owner User ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "testowner_1753461280", "email": "testowner_1753461280@example.com", "password": "123456", "role": "poster"}'
+Status Code: 200
+Response: {"id":8,"username":"testowner_1753461280","email":"testowner_1753461280@example.com","role":"poster"}
+------------------------------------------------------------
+
+=== Duplicate Worker Registration (Expect 400) ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "testworker_1753461280", "email": "testworker_1753461280@example.com", "password": "123456", "role": "seeker"}'
+Status Code: 400
+Response: {"detail":"Email already registered"}
+------------------------------------------------------------
+
+=== Login Worker ===
+URL: https://myworkbee.duckdns.org/users/login
+Method: POST
+Request Body: b'{"email": "testworker_1753461280@example.com", "password": "123456"}'
+Status Code: 200
+Response: {"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0d29ya2VyXzE3NTM0NjEyODBAZXhhbXBsZS5jb20iLCJleHAiOjE3NTM0NjQ4ODd9.lRKr5e9gP1ld-u1apjLg84nM649Gey2Hj8K6862rtwo","token_type":"bearer","id":7,"username":"testworker_1753461280","role":"seeker"}
+------------------------------------------------------------
+
+=== Login Owner ===
+URL: https://myworkbee.duckdns.org/users/login
+Method: POST
+Request Body: b'{"email": "testowner_1753461280@example.com", "password": "123456"}'
+Status Code: 200
+Response: {"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0b3duZXJfMTc1MzQ2MTI4MEBleGFtcGxlLmNvbSIsImV4cCI6MTc1MzQ2NDg4OH0.-AFIJY1rT9xhnB8_Vk7JjR6VF_NHN6Y-qvIkifSPcFk","token_type":"bearer","id":8,"username":"testowner_1753461280","role":"poster"}
+------------------------------------------------------------
+
+=== Create Worker Profile ===
+URL: https://myworkbee.duckdns.org/workers/
+Method: POST
+Request Body: b'{"user_id": 7, "name": "Test Worker", "phone": "1234567890", "email": "testworker_1753461280@example.com", "skills": "Testing,API", "years_of_experience": 2, "address": "123 Test Lane", "state": "TestState", "city": "TestCity", "pincode": "123456", "latitude": 19.076, "longitude": 72.8777, "fcm_token": "dummy_token_1753461280"}'
+Status Code: 200
+Response: {"id":4,"user_id":7,"name":"Test Worker","phone":"1234567890","email":"testworker_1753461280@example.com","skills":"Testing,API","years_of_experience":2,"address":"123 Test Lane","state":"TestState","city":"TestCity","pincode":"123456","latitude":19.076,"longitude":72.8777,"fcm_token":"dummy_token_1753461280"}
+------------------------------------------------------------
+
+=== Create Business Owner Profile ===
+URL: https://myworkbee.duckdns.org/business-owners/
+Method: POST
+Request Body: b'{"user_id": 8, "name": "Test Owner", "phone": "9876543210", "email": "testowner_1753461280@example.com", "business_name": "Test Business", "address": "456 Owner Lane", "state": "OwnerState", "city": "OwnerCity", "pincode": "654321", "fcm_token": "dummy_token_1753461280"}'
+Status Code: 200
+Response: {"id":4,"user_id":8,"business_name":"Test Business","contact_person":null,"contact_phone":null,"contact_email":null,"address":"456 Owner Lane","website":null,"industry":null,"state":"OwnerState","city":"OwnerCity","pincode":"654321","year_established":null}
+------------------------------------------------------------
+
+=== Create Job ===
+URL: https://myworkbee.duckdns.org/jobs/
+Method: POST
+Request Body: b'{"title": "API Test Job", "description": "A job for API testing.", "latitude": 19.076, "longitude": 72.8777, "business_owner_id": 4}'
+Status Code: 200
+Response: {"id":4,"business_owner_id":4,"title":"API Test Job","description":"A job for API testing.","required_skills":null,"location":null,"address":null,"state":null,"city":null,"pincode":null,"hourly_rate":null,"estimated_hours":null,"start_date":null,"contact_person":null,"contact_phone":null,"contact_email":null,"posted_date":"2025-07-25T16:34:50","status":"open","latitude":19.076,"longitude":72.8777}
+------------------------------------------------------------
+
+=== Get All Jobs ===
+URL: https://myworkbee.duckdns.org/jobs/
+Method: GET
+Request Body: None
+Status Code: 200
+Response: [{"id":4,"business_owner_id":4,"title":"API Test Job","description":"A job for API testing.","required_skills":null,"location":null,"address":null,"state":null,"city":null,"pincode":null,"hourly_rate":null,"estimated_hours":null,"start_date":null,"contact_person":null,"contact_phone":null,"contact_email":null,"posted_date":"2025-07-25T16:34:50","status":"open","latitude":19.076,"longitude":72.8777}]
+------------------------------------------------------------
+
+=== Get Nearby Jobs ===
+URL: https://myworkbee.duckdns.org/jobs/nearby?lat=19.076&lng=72.8777&radius_km=10
+Method: GET
+Request Body: None
+Status Code: 200
+Response: [{"id":4,"business_owner_id":4,"title":"API Test Job","description":"A job for API testing.","required_skills":null,"location":null,"address":null,"state":null,"city":null,"pincode":null,"hourly_rate":null,"estimated_hours":null,"start_date":null,"contact_person":null,"contact_phone":null,"contact_email":null,"posted_date":"2025-07-25T16:34:50","status":"open","latitude":19.076,"longitude":72.8777}]
+------------------------------------------------------------
+
+=== Apply for Job ===
+URL: https://myworkbee.duckdns.org/applications/
+Method: POST
+Request Body: b'{"worker_id": 4, "job_id": 4}'
+Status Code: 200
+Response: {"job_id":4,"worker_id":4,"message":null,"id":4,"status":"pending","applied_date":"2025-07-25T16:34:50","responded_date":null}
+------------------------------------------------------------
+
+=== Duplicate Application (Expect 400) ===
+URL: https://myworkbee.duckdns.org/applications/
+Method: POST
+Request Body: b'{"worker_id": 4, "job_id": 4}'
+Status Code: 400
+Response: {"detail":"Worker 4 has already applied for job 4"}
+------------------------------------------------------------
+
+=== Get Applications by Worker ===
+URL: https://myworkbee.duckdns.org/applications/worker/4
+Method: GET
+Request Body: None
+Status Code: 200
+Response: [{"job_id":4,"worker_id":4,"message":null,"id":4,"status":"pending","applied_date":"2025-07-25T16:34:50","responded_date":null}]
+------------------------------------------------------------
+
+=== Get Notifications for Worker ===
+URL: https://myworkbee.duckdns.org/notifications/4
+Method: GET
+Request Body: None
+Status Code: 200
+Response: [{"worker_id":4,"job_id":4,"message":"New job nearby: API Test Job","id":4,"is_read":false,"created_at":"2025-07-25T16:34:50"}]
+------------------------------------------------------------
+
+=== Mark Notifications as Read ===
+URL: https://myworkbee.duckdns.org/notifications/mark_read
+Method: POST
+Request Body: b'{"notification_ids": [4]}'
+Status Code: 200
+Response: {"updated":1}
+------------------------------------------------------------
+
+=== Force FCM Notification ===
+URL: https://myworkbee.duckdns.org/notifications/force_fcm/4?title=Test&body=This%20is%20a%20test%20notification
+Method: POST
+Request Body: None
+Status Code: 200
+Response: {"success":false,"worker_id":4,"fcm_token":"dummy_token_1753461280","title":"Test","body":"This is a test notification","fcm_error":"('invalid_grant: Invalid JWT Signature.', {'error': 'invalid_grant', 'error_description': 'Invalid JWT Signature.'})"}
+------------------------------------------------------------
+
+=== Get Non-existent Worker (Expect 404) ===
+URL: https://myworkbee.duckdns.org/workers/999999
+Method: GET
+Request Body: None
+Status Code: 404
+Response: {"detail":"Worker not found"}
+------------------------------------------------------------
+
+=== Delete Non-existent Job (Expect 404) ===
+URL: https://myworkbee.duckdns.org/jobs/999999
+Method: DELETE
+Request Body: None
+Status Code: 404
+Response: {"detail":"Job not found"}
+------------------------------------------------------------
+
+=== Delete Application (Cleanup) ===
+URL: https://myworkbee.duckdns.org/applications/4
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"Job application deleted successfully","deleted_application_id":4,"job_id":4,"worker_id":4,"deleted_at":"2025-07-25T16:34:52.929972"}
+------------------------------------------------------------
+
+=== Delete Notification 4 (Cleanup) ===
+URL: https://myworkbee.duckdns.org/notifications/id/4
+Method: DELETE
+Request Body: None
+Status Code: 404
+Response: {"detail":"Not Found"}
+------------------------------------------------------------
+
+=== Delete Job (Cleanup) ===
+URL: https://myworkbee.duckdns.org/jobs/4
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"Job and all associated applications deleted successfully","deleted_job_id":4,"deleted_applications_count":0,"deleted_at":"2025-07-25T16:34:53.812547"}
+------------------------------------------------------------
+
+=== Delete Worker (Cleanup) ===
+URL: https://myworkbee.duckdns.org/workers/4
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"Worker and all associated applications deleted successfully","deleted_worker_id":4,"deleted_applications_count":0,"deleted_at":"2025-07-25T16:34:54.099628"}
+------------------------------------------------------------
+
+=== Delete Business Owner (Cleanup) ===
+URL: https://myworkbee.duckdns.org/business-owners/4
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"Business owner and all associated data deleted successfully","deleted_business_owner_id":4,"deleted_jobs_count":0,"deleted_applications_count":0,"deleted_at":"2025-07-25T16:34:54.389468"}
+------------------------------------------------------------
+
+=== Delete Worker User (Cleanup) ===
+URL: https://myworkbee.duckdns.org/users/7
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"User deleted successfully","deleted_user_id":7,"deleted_at":"2025-07-25T16:34:54.873614"}
+------------------------------------------------------------
+
+=== Delete Owner User (Cleanup) ===
+URL: https://myworkbee.duckdns.org/users/8
+Method: DELETE
+Request Body: None
+Status Code: 200
+Response: {"success":true,"message":"User deleted successfully","deleted_user_id":8,"deleted_at":"2025-07-25T16:34:55.182291"}
+------------------------------------------------------------
+
+=== Register with all fields empty (Expect 422 or 400) ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "", "email": "", "password": "", "role": ""}'
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"value_error","loc":["body","username"],"msg":"Value error, Username cannot be empty","input":"","ctx":{"error":"Username cannot be empty"}},{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: An email address must have an @-sign.","input":"","ctx":{"reason":"An email address must have an @-sign."}},{"type":"value_error","loc":["body","password"],"msg":"Value error, Password cannot be empty","input":"","ctx":{"error":"Password cannot be empty"}},{"type":"value_error","loc":["body","role"],"msg":"Value error, Role must be one of: poster, seeker","input":"","ctx":{"error":"Role must be one of: poster, seeker"}}]}
+------------------------------------------------------------
+
+=== Register with invalid email (Expect 422 or 400) ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "edgecaseuser", "email": "notanemail", "password": "123456", "role": "seeker"}'
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: An email address must have an @-sign.","input":"notanemail","ctx":{"reason":"An email address must have an @-sign."}}]}
+------------------------------------------------------------
+
+=== Register with very long username (Expect 400 or 422) ===
+URL: https://myworkbee.duckdns.org/users/register
+Method: POST
+Request Body: b'{"username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu", "email": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu@example.com", "password": "123456", "role": "seeker"}'
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"value_error","loc":["body","username"],"msg":"Value error, Username must be 50 characters or less","input":"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu","ctx":{"error":"Username must be 50 characters or less"}},{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: The email address is too long before the @-sign (236 characters too many).","input":"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu@example.com","ctx":{"reason":"The email address is too long before the @-sign (236 characters too many)."}}]}
+------------------------------------------------------------
+
+=== Login with wrong password (Expect 401, 400, or 422) ===
+URL: https://myworkbee.duckdns.org/users/login
+Method: POST
+Request Body: b'{"email": "testworker_1753461280@example.com", "password": "wrongpass"}'
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"value_error","loc":["body","password"],"msg":"Value error, PIN must be exactly 6 digits","input":"wrongpass","ctx":{"error":"PIN must be exactly 6 digits"}}]}
+------------------------------------------------------------
+
+=== Create worker profile with missing fields (Expect 400 or 422) ===
+URL: https://myworkbee.duckdns.org/workers/
+Method: POST
+Request Body: b'{"user_id": 7}'
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"missing","loc":["body","name"],"msg":"Field required","input":"{'user_id': 7}"}]}
+------------------------------------------------------------
+
+=== Create job with invalid coordinates (Expect 400) ===
+URL: https://myworkbee.duckdns.org/jobs/
+Method: POST
+Request Body: b'{"title": "Bad Job", "description": "Bad", "latitude": 999, "longitude": 999, "business_owner_id": 4}'
+Status Code: 400
+Response: {"detail":"Business owner with id 4 not found"}
+------------------------------------------------------------
+
+=== Apply for job with non-existent worker (Expect 400 or 404) ===
+URL: https://myworkbee.duckdns.org/applications/
+Method: POST
+Request Body: b'{"worker_id": 999999, "job_id": 4}'
+Status Code: 400
+Response: {"detail":"Job with id 4 not found"}
+------------------------------------------------------------
+
+=== Apply for job with non-existent job (Expect 400 or 404) ===
+URL: https://myworkbee.duckdns.org/applications/
+Method: POST
+Request Body: b'{"worker_id": 4, "job_id": 999999}'
+Status Code: 400
+Response: {"detail":"Job with id 999999 not found"}
+------------------------------------------------------------
+
+=== Mark non-existent notification as read (Expect 404, 400, or 200) ===
+URL: https://myworkbee.duckdns.org/notifications/mark_read
+Method: POST
+Request Body: b'{"notification_ids": [999999]}'
+Status Code: 200
+Response: {"updated":0}
+------------------------------------------------------------
+
+=== Delete already deleted job (Expect 404) ===
+URL: https://myworkbee.duckdns.org/jobs/4
+Method: DELETE
+Request Body: None
+Status Code: 404
+Response: {"detail":"Job not found"}
+------------------------------------------------------------
+
+=== Delete job with invalid ID (Expect 422 or 404) ===
+URL: https://myworkbee.duckdns.org/jobs/notanid
+Method: DELETE
+Request Body: None
+Status Code: 422
+Response: {"detail":"Validation error","errors":[{"type":"int_parsing","loc":["path","job_id"],"msg":"Input should be a valid integer, unable to parse string as an integer","input":"notanid"}]}
+------------------------------------------------------------
+
+=== Get all jobs without token (Expect 200 or 401) ===
+URL: https://myworkbee.duckdns.org/jobs/
+Method: GET
+Request Body: None
+Status Code: 200
+Response: []
+------------------------------------------------------------
+
+=== Get all jobs with invalid token (Expect 200 or 401) ===
+URL: https://myworkbee.duckdns.org/jobs/
+Method: GET
+Request Body: None
+Status Code: 200
+Response: []
+------------------------------------------------------------
+
+=== TEST SUMMARY ===
+Total tests: 38
+Passed: 37
+Failed: 1
+
+Detailed Results:
+PASS: Register Worker User (Status: 200)
+PASS: Register Owner User (Status: 200)
+PASS: Duplicate Worker Registration (Expect 400) (Status: 400)
+PASS: Login Worker (Status: 200)
+PASS: Login Owner (Status: 200)
+PASS: Create Worker Profile (Status: 200)
+PASS: Create Business Owner Profile (Status: 200)
+PASS: Create Job (Status: 200)
+PASS: Get All Jobs (Status: 200)
+PASS: Get Nearby Jobs (Status: 200)
+PASS: Apply for Job (Status: 200)
+PASS: Duplicate Application (Expect 400) (Status: 400)
+PASS: Get Applications by Worker (Status: 200)
+PASS: Get Notifications for Worker (Status: 200)
+PASS: Mark Notifications as Read (Status: 200)
+PASS: Force FCM Notification (Status: 200)
+PASS: Get Non-existent Worker (Expect 404) (Status: 404)
+PASS: Delete Non-existent Job (Expect 404) (Status: 404)
+PASS: Delete Application (Cleanup) (Status: 200)
+FAIL: Delete Notification 4 (Cleanup) (Status: 404)
+PASS: Delete Job (Cleanup) (Status: 200)
+PASS: Delete Worker (Cleanup) (Status: 200)
+PASS: Delete Business Owner (Cleanup) (Status: 200)
+PASS: Delete Worker User (Cleanup) (Status: 200)
+PASS: Delete Owner User (Cleanup) (Status: 200)
+PASS: Register with all fields empty (Expect 422 or 400) (Status: 422)
+PASS: Register with invalid email (Expect 422 or 400) (Status: 422)
+PASS: Register with very long username (Expect 400 or 422) (Status: 422)
+PASS: Login with wrong password (Expect 401, 400, or 422) (Status: 422)
+PASS: Create worker profile with missing fields (Expect 400 or 422) (Status: 422)
+PASS: Create job with invalid coordinates (Expect 400) (Status: 400)
+PASS: Apply for job with non-existent worker (Expect 400 or 404) (Status: 400)
+PASS: Apply for job with non-existent job (Expect 400 or 404) (Status: 400)
+PASS: Mark non-existent notification as read (Expect 404, 400, or 200) (Status: 200)
+PASS: Delete already deleted job (Expect 404) (Status: 404)
+PASS: Delete job with invalid ID (Expect 422 or 404) (Status: 422)
+PASS: Get all jobs without token (Expect 200 or 401) (Status: 200)
+PASS: Get all jobs with invalid token (Expect 200 or 401) (Status: 200)
