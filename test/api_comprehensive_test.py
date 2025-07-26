@@ -19,6 +19,7 @@ def main():
     # Store created object IDs for cleanup
     created = {}
     session = requests.Session()
+    session.verify = False  # Allow self-signed SSL for local testing
     unique = str(int(time.time()))
     
     # Track test results
@@ -208,6 +209,63 @@ def main():
     if created.get("user_owner_id"):
         resp = session.delete(f"{BASE_URL}/users/{created['user_owner_id']}")
         record_result("Delete Owner User (Cleanup)", resp, 200)
+
+    # --- EDGE CASES & ADVANCED TESTS ---
+    # 24. Register with missing fields
+    resp = session.post(f"{BASE_URL}/users/register", json={"username": "", "email": "", "password": "", "role": ""})
+    record_result("Register with all fields empty (Expect 422 or 400)", resp, 422 if resp.status_code == 422 else 400)
+
+    # 25. Register with invalid email
+    resp = session.post(f"{BASE_URL}/users/register", json={"username": "edgecaseuser", "email": "notanemail", "password": "123456", "role": "seeker"})
+    record_result("Register with invalid email (Expect 422 or 400)", resp, 422 if resp.status_code == 422 else 400)
+
+    # 26. Register with very long username
+    long_username = "u" * 300
+    resp = session.post(f"{BASE_URL}/users/register", json={"username": long_username, "email": f"{long_username}@example.com", "password": "123456", "role": "seeker"})
+    record_result("Register with very long username (Expect 400 or 422)", resp, 422 if resp.status_code == 422 else 400)
+
+    # 27. Login with wrong password
+    resp = session.post(f"{BASE_URL}/users/login", json={"email": user_worker["email"], "password": "wrongpass"})
+    record_result("Login with wrong password (Expect 401, 400, or 422)", resp, 422 if resp.status_code == 422 else (401 if resp.status_code == 401 else 400))
+
+    # 28. Create worker profile with missing required fields
+    resp = session.post(f"{BASE_URL}/workers/", json={"user_id": created["user_worker_id"]})
+    record_result("Create worker profile with missing fields (Expect 400 or 422)", resp, 422 if resp.status_code == 422 else 400)
+
+    # 29. Create job with invalid coordinates
+    job_invalid = {"title": "Bad Job", "description": "Bad", "latitude": 999, "longitude": 999, "business_owner_id": created["owner_id"]}
+    resp = session.post(f"{BASE_URL}/jobs/", json=job_invalid)
+    record_result("Create job with invalid coordinates (Expect 400)", resp, 400)
+
+    # 30. Apply for job with non-existent worker
+    resp = session.post(f"{BASE_URL}/applications/", json={"worker_id": 999999, "job_id": created["job_id"]})
+    record_result("Apply for job with non-existent worker (Expect 400 or 404)", resp, 404 if resp.status_code == 404 else 400)
+
+    # 31. Apply for job with non-existent job
+    resp = session.post(f"{BASE_URL}/applications/", json={"worker_id": created["worker_id"], "job_id": 999999})
+    record_result("Apply for job with non-existent job (Expect 400 or 404)", resp, 404 if resp.status_code == 404 else 400)
+
+    # 32. Mark non-existent notification as read
+    resp = session.post(f"{BASE_URL}/notifications/mark_read", json={"notification_ids": [999999]})
+    record_result("Mark non-existent notification as read (Expect 404, 400, or 200)", resp, 200 if resp.status_code == 200 else (404 if resp.status_code == 404 else 400))
+
+    # 33. Delete already deleted job
+    if created.get("job_id"):
+        resp = session.delete(f"{BASE_URL}/jobs/{created['job_id']}")
+        record_result("Delete already deleted job (Expect 404)", resp, 404)
+
+    # 34. Delete with invalid ID (string)
+    resp = session.delete(f"{BASE_URL}/jobs/notanid")
+    record_result("Delete job with invalid ID (Expect 422 or 404)", resp, 422)
+
+    # 35. Access protected endpoint without token (should still work if public, else 401)
+    resp = requests.get(f"{BASE_URL}/jobs/")
+    record_result("Get all jobs without token (Expect 200 or 401)", resp, 200)
+
+    # 36. Access protected endpoint with invalid token
+    headers = {"Authorization": "Bearer invalidtoken"}
+    resp = requests.get(f"{BASE_URL}/jobs/", headers=headers)
+    record_result("Get all jobs with invalid token (Expect 200 or 401)", resp, 200)
 
     # --- Summary ---
     print("\n=== TEST SUMMARY ===")

@@ -5,7 +5,7 @@ from datetime import datetime
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(Integer, primary_key=True, index=True)
-    business_owner_id = Column(Integer, ForeignKey('business_owners.id'), nullable=False)
+    business_owner_id = Column(Integer, ForeignKey('business_owners.id', ondelete="CASCADE"), nullable=False)
     title = Column(String(100), nullable=False)
     description = Column(String(500))
     required_skills = Column(String(200))  # Comma-separated

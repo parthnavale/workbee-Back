@@ -56,3 +56,12 @@ def force_fcm_notification(worker_id: int, title: str = "Test FCM", body: str = 
     if not success:
         response["fcm_error"] = result
     return response 
+
+@router.delete("/id/{notification_id}")
+def delete_notification(notification_id: int, db: Session = Depends(get_db)):
+    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    db.delete(notification)
+    db.commit()
+    return {"success": True, "deleted_notification_id": notification_id} 

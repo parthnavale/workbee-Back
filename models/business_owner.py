@@ -4,7 +4,7 @@ from core.database import Base
 class BusinessOwner(Base):
     __tablename__ = "business_owners"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), unique=True, nullable=False)
     business_name = Column(String(100), nullable=False)
     contact_person = Column(String(100))
     contact_phone = Column(String(20))
