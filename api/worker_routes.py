@@ -90,6 +90,24 @@ def get_worker_fcm_token(worker_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Worker not found")
     return {"worker_id": worker_id, "fcm_token": worker.fcm_token}
 
+@router.post("/test-fcm")
+def test_fcm_notification(request: dict):
+    """Test endpoint to send FCM notification"""
+    try:
+        from core.fcm import send_fcm_notification
+        token = request.get("token")
+        title = request.get("title", "Test Notification")
+        body = request.get("body", "Test message")
+        data = request.get("data", {})
+        
+        if not token:
+            raise HTTPException(status_code=400, detail="FCM token is required")
+            
+        result = send_fcm_notification(token, title, body, data)
+        return {"success": True, "message": "FCM notification sent", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send FCM notification: {str(e)}")
+
 @router.delete("/{worker_id}")
 def delete_worker(worker_id: int, db: Session = Depends(get_db)):
     """Delete worker and all associated job applications"""
