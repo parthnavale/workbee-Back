@@ -7,6 +7,8 @@ from models.job_application import JobApplication
 from models.job import Job
 from models.worker import Worker
 from datetime import datetime
+from models.business_owner import BusinessOwner
+from core.fcm import send_fcm_notification
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -35,6 +37,17 @@ def apply_for_job(application: JobApplicationCreate, db: Session = Depends(get_d
         db.add(db_app)
         db.commit()
         db.refresh(db_app)
+        # Send FCM notification to business owner if they have an FCM token
+        owner = db.query(BusinessOwner).filter(BusinessOwner.id == job.business_owner_id).first()
+        if owner and owner.fcm_token:
+            title = f"New Application for {job.title}"
+            body = f"{worker.contact_person or 'A worker'} has applied for your job: {job.title}."
+            data = {
+                "job_id": str(job.id),
+                "application_id": str(db_app.id),
+                "worker_id": str(worker.id)
+            }
+            send_fcm_notification(owner.fcm_token, title, body, data)
         return db_app
     except IntegrityError as e:
         db.rollback()
