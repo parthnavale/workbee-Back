@@ -15,4 +15,5 @@ class BusinessOwner(Base):
     state = Column(String(50))
     city = Column(String(50))
     pincode = Column(String(20))
-    year_established = Column(Integer) 
+    year_established = Column(Integer)
+    fcm_token = Column(String(255), nullable=True)  # FCM token for push notifications 
