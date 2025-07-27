@@ -41,7 +41,7 @@ def apply_for_job(application: JobApplicationCreate, db: Session = Depends(get_d
         owner = db.query(BusinessOwner).filter(BusinessOwner.id == job.business_owner_id).first()
         if owner and owner.fcm_token:
             title = f"New Application for {job.title}"
-            body = f"{worker.contact_person or 'A worker'} has applied for your job: {job.title}."
+            body = f"{worker.name or 'A worker'} has applied for your job: {job.title}."
             data = {
                 "job_id": str(job.id),
                 "application_id": str(db_app.id),
