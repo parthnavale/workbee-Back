@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from schemas.business_owner_schemas import BusinessOwnerCreate, BusinessOwnerUpdate, BusinessOwnerResponse
+from schemas.business_owner_schemas import BusinessOwnerCreate, BusinessOwnerUpdate, BusinessOwnerResponse, FCMTokenUpdate
 from core.database import get_db
 from models.business_owner import BusinessOwner
 from models.user import User
@@ -96,3 +96,19 @@ def delete_business_owner(owner_id: int, db: Session = Depends(get_db)):
         "deleted_applications_count": len(applications),
         "deleted_at": datetime.utcnow().isoformat()
     } 
+
+@router.put("/{owner_id}/fcm-token")
+def update_fcm_token(owner_id: int, token_update: FCMTokenUpdate, db: Session = Depends(get_db)):
+    owner = db.query(BusinessOwner).filter(BusinessOwner.id == owner_id).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner not found")
+    owner.fcm_token = token_update.fcm_token
+    db.commit()
+    return {"success": True, "fcm_token": owner.fcm_token}
+
+@router.get("/{owner_id}/fcm-token")
+def get_fcm_token(owner_id: int, db: Session = Depends(get_db)):
+    owner = db.query(BusinessOwner).filter(BusinessOwner.id == owner_id).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner not found")
+    return {"fcm_token": owner.fcm_token} 
