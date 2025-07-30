@@ -15,15 +15,28 @@ from schemas.notification_schemas import NotificationCreate
 import asyncio
 from api.notification_ws import send_notification_to_worker
 from core.fcm import send_fcm_notification
+from api.auth import require_business_owner, get_current_user
+from models.user import User
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.post("/", response_model=JobResponse)
-def create_job(job: JobCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
-    # Check if business owner exists
-    business_owner = db.query(BusinessOwner).filter(BusinessOwner.id == job.business_owner_id).first()
+def create_job(
+    job: JobCreate, 
+    current_user: User = Depends(require_business_owner()),
+    db: Session = Depends(get_db), 
+    background_tasks: BackgroundTasks = None
+):
+    # Check if business owner exists and belongs to current user
+    business_owner = db.query(BusinessOwner).filter(
+        BusinessOwner.id == job.business_owner_id,
+        BusinessOwner.user_id == current_user.id
+    ).first()
     if not business_owner:
-        raise HTTPException(status_code=400, detail=f"Business owner with id {job.business_owner_id} not found")
+        raise HTTPException(
+            status_code=403, 
+            detail="You can only create jobs for your own business"
+        )
     
     try:
         db_job = Job(**job.dict())
@@ -80,8 +93,10 @@ def get_nearby_jobs(
     lat: float = Query(..., description="Latitude of worker location"),
     lng: float = Query(..., description="Longitude of worker location"),
     radius_km: int = Query(10, description="Search radius in kilometers"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Get nearby jobs (accessible by all authenticated users)"""
     h3_resolution = 8  # Reasonable for city/neighborhood
     origin_cell = h3.latlng_to_cell(lat, lng, h3_resolution)
     # Approximate number of rings for the radius (each ring ~1km at res 8)
@@ -96,26 +111,69 @@ def get_nearby_jobs(
     return nearby_jobs
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: int, db: Session = Depends(get_db)):
+def get_job(
+    job_id: int, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get job by ID (accessible by all authenticated users)"""
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
 
 @router.get("/", response_model=list[JobResponse])
-def get_all_jobs(db: Session = Depends(get_db)):
+def get_all_jobs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all jobs (accessible by all authenticated users)"""
     return db.query(Job).all()
 
+@router.get("/my-jobs", response_model=list[JobResponse])
+def get_my_jobs(
+    current_user: User = Depends(require_business_owner()),
+    db: Session = Depends(get_db)
+):
+    """Get current user's jobs (business owners only)"""
+    # Get business owner profile
+    business_owner = db.query(BusinessOwner).filter(BusinessOwner.user_id == current_user.id).first()
+    if not business_owner:
+        raise HTTPException(status_code=404, detail="Business owner profile not found")
+    
+    # Get jobs for this business owner
+    jobs = db.query(Job).filter(Job.business_owner_id == business_owner.id).all()
+    return jobs
+
 @router.get("/business/{business_owner_id}", response_model=list[JobResponse])
-def get_jobs_by_business_owner(business_owner_id: int, db: Session = Depends(get_db)):
+def get_jobs_by_business_owner(
+    business_owner_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get jobs by business owner ID (accessible by all authenticated users)"""
     jobs = db.query(Job).filter(Job.business_owner_id == business_owner_id).all()
     return jobs
 
 @router.put("/{job_id}", response_model=JobResponse)
-def update_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)):
+def update_job(
+    job_id: int, 
+    job_update: JobUpdate,
+    current_user: User = Depends(require_business_owner()),
+    db: Session = Depends(get_db)
+):
+    """Update job (only if you own it)"""
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check if current user owns this job
+    business_owner = db.query(BusinessOwner).filter(
+        BusinessOwner.id == job.business_owner_id,
+        BusinessOwner.user_id == current_user.id
+    ).first()
+    if not business_owner:
+        raise HTTPException(status_code=403, detail="You can only update your own jobs")
     
     try:
         for key, value in job_update.dict(exclude_unset=True).items():
@@ -128,11 +186,23 @@ def update_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Invalid data provided")
 
 @router.delete("/{job_id}")
-def delete_job(job_id: int, db: Session = Depends(get_db)):
-    """Delete job and all associated applications"""
+def delete_job(
+    job_id: int,
+    current_user: User = Depends(require_business_owner()),
+    db: Session = Depends(get_db)
+):
+    """Delete job (only if you own it)"""
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check if current user owns this job
+    business_owner = db.query(BusinessOwner).filter(
+        BusinessOwner.id == job.business_owner_id,
+        BusinessOwner.user_id == current_user.id
+    ).first()
+    if not business_owner:
+        raise HTTPException(status_code=403, detail="You can only delete your own jobs")
     
     # Get all applications for this job
     applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
@@ -151,12 +221,14 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
         "deleted_job_id": job_id,
         "deleted_applications_count": len(applications),
         "deleted_at": datetime.utcnow().isoformat()
-    } 
+    }
 
 @router.post("/batch", response_model=list[JobResponse])
 def get_jobs_by_ids(
     job_ids: list[int] = Body(..., embed=True, description="List of job IDs to fetch"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Get jobs by IDs (accessible by all authenticated users)"""
     jobs = db.query(Job).filter(Job.id.in_(job_ids)).all()
     return jobs 
